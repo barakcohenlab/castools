@@ -66,8 +66,6 @@ def collasping_cell_BCs(sorted_cell_bc):
             new_key = hamming_key_list(key, correspondence.keys())
             if new_key in correspondence.keys():
                 val = correspondence[new_key]
-                if len(val) != 1:
-                    print('values is', val)
                 new_val = val.append(key)
                 correspondence.update(new_key = new_val)
             else:
