@@ -1,8 +1,9 @@
 import gzip
 import sys
 import argparse
-from fuzzywuzzy import fuzz
-from fuzzywuzzy import process
+from fuzzysearch import find_near_matches
+#from fuzzywuzzy import fuzz
+#from fuzzywuzzy import process
 
 def parse_arguments():
     parser = argparse.ArgumentParser(description='Print the cell-barcode, UMI and trip barcode from the nextseq run. Use the 10x whitelist to whitelist the cell-barcodes. Only print the white-listed cell-barcodes.')
@@ -68,8 +69,9 @@ def parse_fastq(args, v3_whitelist):
     captureseq_n = 0
     polya_notvalid_n = 0
     other_notvalid_n = 0
-    with gzip.open(sys.argv[1], 'rt') as r1:
-        with gzip.open(sys.argv[2], 'rt') as r2:
+    fuzzy_cutoff_ratio = 0.85 # 0.85 * 16 = 13.6, so 14, 15, 16
+    with gzip.open(args.R1, 'rt') as r1:
+        with gzip.open(args.R2, 'rt') as r2:
             for line1,line2 in zip(r1,r2):
                 line1 = line1.rstrip("\n")
                 line2 = line2.rstrip("\n")
@@ -81,11 +83,15 @@ def parse_fastq(args, v3_whitelist):
                     capture_seq = "TTGCTAGGAC"
                     end_of_bfp = "TCGCTTCGAGTCTAGA"
                     before_trip = "CCGGCCACAACTCGAG"
-                    # 0.85 * 16 = 13.6, so 14, 15, 16
-                    print(fuzz.partial_ratio(line2, end_of_bfp))
-                    print(fuzz.partial_ratio(line1, before_trip))
-                    if end_of_bfp in line2: #Try to get tripBC using Read2, look for end of BFP in read2
-                        beg_pos = line2.find(end_of_bfp)
+                    #print(fuzz.partial_ratio(line2, end_of_bfp))
+                    #print(fuzz.partial_ratio(line1, before_trip))
+                    #print(find_near_matches(end_of_bfp, line2, max_l_dist=2))
+                    m1 = find_near_matches(end_of_bfp, line2, max_l_dist=2)
+                    m2 = find_near_matches(before_trip, line1, max_l_dist=2)
+                    #print(process.extractOne(end_of_bfp, line2, scorer=fuzz.token_sort_ratio))
+                    if end_of_bfp in line2 or m1: #Try to get tripBC using Read2, look for end of BFP in read2
+                        #print("m1", m1[0].start, m1, end_of_bfp, line2, file = s)
+                        beg_pos = m1[0].start
                         # Get umi and cell bc from read 1
                         cell_bc = line1[0:16]
                         umi = line1[16:28]
@@ -95,20 +101,20 @@ def parse_fastq(args, v3_whitelist):
                             if uid not in cellumitrip:
                                 cellumitrip[uid] = 0
                             cellumitrip[uid] += 1
-                            #print(cell_bc, umi, trip_bc)
                             polya_n += 1
                             usable_reads_n += 1
                         else:
                             polya_notvalid_n += 1
-                            print("Not in whitelist", cell_bc, line1, file = sys.stderr)
+                            #print("Not in whitelist", cell_bc, line1, file = sys.stderr)
                             #if reverse_complement(cell_bc) in v3_whitelist:
                             #    print("RC in whitelist - polyA", cell_bc, line1, file = sys.stderr)
                             #if cell_bc in translate_table:
                             #    print("RC in translate_table - polyA", cell_bc, line1, file = sys.stderr)
                             #else:
                             #    print("RC not in translate_table - polyA", cell_bc, line1, file = sys.stderr)
-                    elif before_trip in line1: #Try to get tripBC using just read1, look for capture sequence
-                        beg_pos = line1.find(before_trip)
+                    elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
+                        #print("m2", m2[0].start, m2, before_trip, line1)
+                        beg_pos = m2[0].start
                         if len(line1) - beg_pos >= 31:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
@@ -128,7 +134,7 @@ def parse_fastq(args, v3_whitelist):
                         not_usable_reads_n += 1
                         #print("not-usable-read", line1, line2, file = sys.stderr)
     total_notusable = not_usable_reads_n + polya_notvalid_n + other_notvalid_n
-    print(sys.argv[1], file = sys.stderr)
+    print(args.R1, file = sys.stderr)
     print("Total, usable, usable-fraction, polya-reads, captureseq-reads, total_not_usable, polya_notusable, withcapture_notusable, other_notusable \n", total_reads_n, usable_reads_n, usable_reads_n/(total_reads_n), polya_n, captureseq_n,  total_notusable, not_usable_reads_n, polya_notvalid_n, other_notvalid_n, file = sys.stderr)
     return cellumitrip
 
