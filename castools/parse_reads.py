@@ -12,7 +12,6 @@ def parse_arguments():
     parser.add_argument("R2",
                         help = "Read2 of the FASTQ pair")
     args = parser.parse_args()
-    print(args)
     return args
 
 ## From https://codereview.stackexchange.com/questions/151329/reverse-complement-of-a-dna-string
