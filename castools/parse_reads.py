@@ -92,27 +92,20 @@ def parse_fastq(args, v3_whitelist):
                         #print("m1", m1[0].start, m1, end_of_bfp, line2, file = s)
                         beg_pos = m1[0].start
                         # Get umi and cell bc from read 1
-                        cell_bc = line1[0:16]
-                        umi = line1[16:28]
-                        trip_bc = line2[beg_pos + 16 :beg_pos + 32]
-                        if cell_bc in v3_whitelist:
-                            uid = cell_bc + " " + umi + " " + trip_bc
-                            if uid not in cellumitrip:
-                                cellumitrip[uid] = 0
-                            cellumitrip[uid] += 1
-                            polya_n += 1
-                            usable_reads_n += 1
-                        else:
-                            polya_notvalid_n += 1
-                            #print("Not in whitelist", cell_bc, line1, file = sys.stderr)
-                            #if reverse_complement(cell_bc) in v3_whitelist:
-                            #    print("RC in whitelist - polyA", cell_bc, line1, file = sys.stderr)
-                            #if cell_bc in translate_table:
-                            #    print("RC in translate_table - polyA", cell_bc, line1, file = sys.stderr)
-                            #else:
-                            #    print("RC not in translate_table - polyA", cell_bc, line1, file = sys.stderr)
+                        if beg_pos + 32 <= len(line2):
+                            cell_bc = line1[0:16]
+                            umi = line1[16:28]
+                            trip_bc = line2[beg_pos + 16 :beg_pos + 32]
+                            if cell_bc in v3_whitelist:
+                                uid = cell_bc + " " + umi + " " + trip_bc
+                                if uid not in cellumitrip:
+                                    cellumitrip[uid] = 0
+                                cellumitrip[uid] += 1
+                                polya_n += 1
+                                usable_reads_n += 1
+                            else:
+                                polya_notvalid_n += 1
                     elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
-                        #print("m2", m2[0].start, m2, before_trip, line1)
                         beg_pos = m2[0].start
                         if len(line1) - beg_pos >= 31:
                             cell_bc = line1[0:16]
@@ -123,7 +116,6 @@ def parse_fastq(args, v3_whitelist):
                                 if uid not in cellumitrip:
                                     cellumitrip[uid] = 0
                                 cellumitrip[uid] += 1
-                                #print(cell_bc, umi, trip_bc)
                                 captureseq_n += 1
                                 usable_reads_n += 1
                             else:
