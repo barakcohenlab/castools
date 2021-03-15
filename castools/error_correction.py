@@ -86,12 +86,16 @@ def correct_cell_bc(trio, collasped_cell_bc):
     '''
     pop_list = []
     for line in trio:
-        cell_bc, umi, trip_bc, count = line
+        try:
+            cell_bc, umi, trip_bc, count = line
+        except:
+            print(line)
+            continue
         new_cell_bc = return_correct_cell_bc(cell_bc, collasped_cell_bc)
         pop_list.append([new_cell_bc,umi,trip_bc, count])
     return pop_list
 
-def error_correcting(trio_tsv):
+def error_correcting(trio_tsv, prefix):
     trio = []
     with open(trio_tsv) as f:
         for line in f:
@@ -101,7 +105,7 @@ def error_correcting(trio_tsv):
     collapsed_cell_bc = collasping_cell_BCs(sorted_cell_bc)
     pop_trio = correct_cell_bc(trio, collapsed_cell_bc)
     pop_trio.sort(key = lambda x: x[3]) 
-    with open('output.tsv', 'w', newline= '') as f_output:
+    with open(prefix + "_" + 'output.tsv', 'w', newline= '') as f_output:
         tsv_output = csv.writer(f_output, delimiter='\t')
         tsv_output.writerows(pop_trio)
 
@@ -114,8 +118,13 @@ def main():
         'trio',
         help="The list of TRIOs"
     )
+    parser.add_argument(
+        'prefix',
+        help="Prefix for the output file",
+        default = ""
+    )
     args = parser.parse_args()
-    error_correcting(args.trio)
+    error_correcting(args.trio, args.prefix)
 
 
 if __name__ == "__main__":
