@@ -92,7 +92,7 @@ def parse_fastq(args, v3_whitelist):
                         #print("m1", m1[0].start, m1, end_of_bfp, line2, file = s)
                         beg_pos = m1[0].start
                         # Get umi and cell bc from read 1
-                        if beg_pos + 32 <= len(line2):
+                        if len(line2) - beg_pos >= 32:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line2[beg_pos + 16 :beg_pos + 32]
@@ -107,7 +107,7 @@ def parse_fastq(args, v3_whitelist):
                                 polya_notvalid_n += 1
                     elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
                         beg_pos = m2[0].start
-                        if len(line1) - beg_pos >= 31:
+                        if len(line1) - beg_pos >= 32:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line1[(beg_pos) + 16 :beg_pos + 32]
