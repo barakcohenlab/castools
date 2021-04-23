@@ -105,7 +105,7 @@ def error_correcting(trio_tsv, prefix):
     collapsed_cell_bc = collasping_cell_BCs(sorted_cell_bc)
     pop_trio = correct_cell_bc(trio, collapsed_cell_bc)
     pop_trio.sort(key = lambda x: x[3]) 
-    with open(prefix + "_" + 'output.tsv', 'w', newline= '') as f_output:
+    with open(prefix + "_" + 'ecoutput.tsv', 'w', newline= '') as f_output:
         tsv_output = csv.writer(f_output, delimiter='\t')
         tsv_output.writerows(pop_trio)
 
