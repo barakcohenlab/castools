@@ -82,6 +82,8 @@ def parse_fastq(args, v3_whitelist):
                     capture_seq = "TTGCTAGGAC"
                     end_of_bfp = "TCGCTTCGAGTCTAGA"
                     before_trip = "CCGGCCACAACTCGAG"
+                    after_trip_bottom = "TCTAGA"
+                    after_trip_top = "CTCGAG"
                     #print(fuzz.partial_ratio(line2, end_of_bfp))
                     #print(fuzz.partial_ratio(line1, before_trip))
                     #print(find_near_matches(end_of_bfp, line2, max_l_dist=2))
@@ -91,8 +93,9 @@ def parse_fastq(args, v3_whitelist):
                     if end_of_bfp in line2 or m1: #Try to get tripBC using Read2, look for end of BFP in read2
                         #print("m1", m1[0].start, m1, end_of_bfp, line2, file = s)
                         beg_pos = m1[0].start
+                        print(str(len(line2) - beg_pos) + " pA" + " " + line1[(beg_pos) + 16 :beg_pos + 32] + " " + line2[beg_pos + 32: beg_pos + 38], file = sys.stderr)
                         # Get umi and cell bc from read 1
-                        if len(line2) - beg_pos >= 32:
+                        if len(line2) - beg_pos >= 38 and line2[beg_pos + 32: beg_pos + 38] == after_trip_top:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line2[beg_pos + 16 :beg_pos + 32]
@@ -107,7 +110,8 @@ def parse_fastq(args, v3_whitelist):
                                 polya_notvalid_n += 1
                     elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
                         beg_pos = m2[0].start
-                        if len(line1) - beg_pos >= 32:
+                        print(str(len(line1) - beg_pos) + "\tCS" + " " + line1[(beg_pos) + 16 :beg_pos + 32] +  " " + line1[beg_pos + 32: beg_pos + 38], file = sys.stderr)
+                        if len(line1) - beg_pos >= 38 and line1[beg_pos + 32: beg_pos + 38] == after_trip_bottom:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line1[(beg_pos) + 16 :beg_pos + 32]
