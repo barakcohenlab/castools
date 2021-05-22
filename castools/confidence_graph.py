@@ -101,6 +101,8 @@ def generate_graph(trio, tripbc_dict):
 def build_graph(trio_path, file_name):
     corrected_trio = read_in_trio(trio_path)
     tripbc_dict = hash_BCs(corrected_trio)
+    with open(file_name + 'tripbc_hash' + '.pickle', 'rb') as handle:
+        pickle.dump(tripbc_dict, handle, protocol = pickle.HIGHEST_PROTOCOL)
     graph = generate_graph(corrected_trio, tripbc_dict)
     with open(file_name + '.pickle', 'rb') as handle:
         pickle.dump(graph, handle, protocol = pickle.HIGHEST_PROTOCOL)
