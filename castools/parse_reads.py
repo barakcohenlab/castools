@@ -44,7 +44,7 @@ def min_hamming(v3_whitelist, bc1):
 def read_whitelist():
     #Read in the 10X v3 whitelist
     v3_whitelist = {}
-    with open("../dat/10xv3_whitelist.txt") as whitelist_fh:
+    with gzip.open("../dat/10xv3_whitelist.txt.gz", "rt") as whitelist_fh:
         for bc in whitelist_fh:
             v3_whitelist[bc.rstrip("\n")] = 1
     return v3_whitelist
