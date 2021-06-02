@@ -136,6 +136,9 @@ def parse_fastq(args, v3_whitelist):
 def main():
     v3_whitelist = read_whitelist()
     #translate_table = translate_10x_whitelist()
+    ########
+    # How did you translate capture sequence bcs to polyA BCs?
+    #######
     args = parse_arguments()
     cellumitrip = parse_fastq(args, v3_whitelist)
     for uid in cellumitrip:
