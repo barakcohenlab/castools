@@ -116,6 +116,7 @@ def parse_fastq(args, v3_whitelist):
                             umi = line1[16:28]
                             trip_bc = line1[(beg_pos) + 16 :beg_pos + 32]
                             if cell_bc in v3_whitelist:
+                                # Should we do the error correction first before filtering through the whitelist?
                                 uid = cell_bc + " " + umi + " "  + trip_bc
                                 if uid not in cellumitrip:
                                     cellumitrip[uid] = 0
