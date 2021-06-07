@@ -99,15 +99,16 @@ def parse_fastq(args, v3_whitelist):
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line2[beg_pos + 16 :beg_pos + 32]
-                            if cell_bc in v3_whitelist:
-                                uid = cell_bc + " " + umi + " " + trip_bc
-                                if uid not in cellumitrip:
-                                    cellumitrip[uid] = 0
-                                cellumitrip[uid] += 1
-                                polya_n += 1
-                                usable_reads_n += 1
-                            else:
-                                polya_notvalid_n += 1
+                            # Should we do the error correction first before filtering through the whitelist?
+                            #if cell_bc in v3_whitelist:
+                            uid = cell_bc + " " + umi + " " + trip_bc
+                            if uid not in cellumitrip:
+                                cellumitrip[uid] = 0
+                            cellumitrip[uid] += 1
+                            polya_n += 1
+                            usable_reads_n += 1
+                            #else:
+                            #    polya_notvalid_n += 1
                     elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
                         beg_pos = m2[0].start
                         print(str(len(line1) - beg_pos) + "\tCS" + " " + line1[(beg_pos) + 16 :beg_pos + 32] +  " " + line1[beg_pos + 32: beg_pos + 38], file = sys.stderr)
@@ -115,17 +116,17 @@ def parse_fastq(args, v3_whitelist):
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
                             trip_bc = line1[(beg_pos) + 16 :beg_pos + 32]
-                            if cell_bc in v3_whitelist:
-                                # Should we do the error correction first before filtering through the whitelist?
-                                uid = cell_bc + " " + umi + " "  + trip_bc
-                                if uid not in cellumitrip:
-                                    cellumitrip[uid] = 0
-                                cellumitrip[uid] += 1
-                                captureseq_n += 1
-                                usable_reads_n += 1
-                            else:
-                                other_notvalid_n += 1
-                                print("not in whitelist", cell_bc, file = sys.stderr)
+                            # Should we do the error correction first before filtering through the whitelist?
+                            #if cell_bc in v3_whitelist:
+                            uid = cell_bc + " " + umi + " "  + trip_bc
+                            if uid not in cellumitrip:
+                                cellumitrip[uid] = 0
+                            cellumitrip[uid] += 1
+                            captureseq_n += 1
+                            usable_reads_n += 1
+                            #else:
+                            #    other_notvalid_n += 1
+                            #    print("not in whitelist", cell_bc, file = sys.stderr)
                     else:
                         not_usable_reads_n += 1
                         #print("not-usable-read", line1, line2, file = sys.stderr)
