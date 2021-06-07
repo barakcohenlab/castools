@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import statsmodels.api as sm
 import argparse
 from datetime import datetime
-import csv
 
 
 def extract_scTrip_fast(path,min_umi=25, max_umi = 800000):
@@ -79,7 +78,7 @@ def get_oinb_estimate(scTRIP):
             # Get the original list with ones 
             zero_counts = [a for a in counts if a == 0]
             non_zero_counts = [a for a in counts if a > 0]
-            zero_counts = zero_counts + 1
+            zero_counts = [x+ 1 for x in zero_counts] 
             original_counts = zero_counts + non_zero_counts
             mean_list.append(np.mean(original_counts))
             var_list.append(np.var(original_counts))
@@ -105,9 +104,7 @@ def oinb_estimation(path, filename):
     '''
     trip_counts = extract_scTrip_fast(path)
     scTRIP_stats = get_oinb_estimate(trip_counts)
-    with open(filename + '.tsv', 'w', newline= '') as f_output:
-        tsv_output = csv.writer(f_output, delimiter='\t')
-        tsv_output.writerows(scTRIP_stats)
+    scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t', mode = 'a')
 # Main function 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

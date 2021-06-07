@@ -116,6 +116,7 @@ def parse_fastq(args, v3_whitelist):
                             umi = line1[16:28]
                             trip_bc = line1[(beg_pos) + 16 :beg_pos + 32]
                             if cell_bc in v3_whitelist:
+                                # Should we do the error correction first before filtering through the whitelist?
                                 uid = cell_bc + " " + umi + " "  + trip_bc
                                 if uid not in cellumitrip:
                                     cellumitrip[uid] = 0
@@ -136,6 +137,9 @@ def parse_fastq(args, v3_whitelist):
 def main():
     v3_whitelist = read_whitelist()
     #translate_table = translate_10x_whitelist()
+    ########
+    # How did you translate capture sequence bcs to polyA BCs?
+    #######
     args = parse_arguments()
     cellumitrip = parse_fastq(args, v3_whitelist)
     for uid in cellumitrip:
