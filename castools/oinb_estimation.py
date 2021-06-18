@@ -104,7 +104,7 @@ def oinb_estimation(path, filename):
     '''
     trip_counts = extract_scTrip_fast(path)
     scTRIP_stats = get_oinb_estimate(trip_counts)
-    scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t', mode = 'a')
+    scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 # Main function 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
