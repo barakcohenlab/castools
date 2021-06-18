@@ -42,7 +42,10 @@ def plot_bulk_sc(bulk_df, sc_df, prefix):
     #print(np.asarray(merged['mu']).reshape(-1, 1))
     #print(np.asarray(merged['exp']))
     reg = model.fit(np.asarray(merged['mu']).reshape(-1, 1), np.asarray(merged['exp']))
+    print(np.asarray(merged['mu']).reshape(-1, 1))
+    print(np.asarray(merged['exp']))
     print(np.sqrt(reg.score(np.asarray(merged['mu']).reshape(-1, 1), np.asarray(merged['exp']))))
+    print(reg.score(np.asarray(merged['mu']).reshape(-1, 1), np.asarray(merged['exp'])))
 
 def main():
     args = parse_arguments()
