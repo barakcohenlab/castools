@@ -132,7 +132,7 @@ def parse_fastq(args, v3_whitelist):
                         #print("not-usable-read", line1, line2, file = sys.stderr)
     total_notusable = not_usable_reads_n + polya_notvalid_n + other_notvalid_n
     print(args.R1, file = sys.stderr)
-    print("Total, usable, usable-fraction, polya-reads, captureseq-reads, total_not_usable, polya_notusable, withcapture_notusable, other_notusable \n", total_reads_n, usable_reads_n, usable_reads_n/(total_reads_n), polya_n, captureseq_n,  total_notusable, not_usable_reads_n, polya_notvalid_n, other_notvalid_n, file = sys.stderr)
+    print("log: Total, usable, usable-fraction, polya-reads, polya-fraction, captureseq-reads, captureseq-fraction, total_not_usable, polya_notusable, withcapture_notusable, other_notusable \n", total_reads_n, usable_reads_n, usable_reads_n/(total_reads_n), polya_n, polya_n/usable_reads_n, captureseq_n,  captureseq_n/usable_reads_n, total_notusable, not_usable_reads_n, polya_notvalid_n, other_notvalid_n, file = sys.stderr)
     return cellumitrip
 
 def main():
