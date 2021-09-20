@@ -18,9 +18,14 @@ n_overlap = 0
 with open(cas_trips_f) as fh:
     for line in fh:
         cas_trip = line.rstrip("\n").split()[2]
-        if cas_trip not in cas_tripbcs:
+        if cas_trip not in cas_tripbcs: #ignore duplicate trip barcodes
             cas_tripbcs[cas_trip] = 1
             if cas_trip in bulk_tripbcs:
                 n_overlap += 1
+        # Print all the lines
+        if cas_trip in bulk_tripbcs:
+            print(line.rstrip("\n"), "overlap")
+        else:
+            print(line.rstrip("\n"), "no-overlap")
 
-print(len(bulk_tripbcs), len(cas_tripbcs), n_overlap)
+print(len(bulk_tripbcs), len(cas_tripbcs), n_overlap, file = sys.stderr)
