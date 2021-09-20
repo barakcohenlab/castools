@@ -78,6 +78,28 @@ def plot_rep1_rep2(rep1, rep2, prefix):
     print(reg.score(np.asarray(merged['alpha_x']).reshape(-1, 1), np.asarray(merged['alpha_y'])))
     plt.close()
 
+    plt.figure(4)
+    plt.scatter(merged['mu_x'], merged['alpha_x'])
+    plt.xlabel("rep1 mu")
+    plt.ylabel("rep1 alpha")
+    plt.savefig(prefix + "_sc_mu_alpha_x.png")
+    model = LinearRegression(fit_intercept = False)
+    reg = model.fit(np.asarray(merged['mu_x']).reshape(-1, 1), np.asarray(merged['alpha_x']))
+    print("mu vs alpha x")
+    print(reg.score(np.asarray(merged['mu_x']).reshape(-1, 1), np.asarray(merged['alpha_x'])))
+    plt.close()
+
+    plt.figure(5)
+    plt.scatter(merged['mu_y'], merged['alpha_y'])
+    plt.xlabel("rep1 mu")
+    plt.ylabel("rep1 alpha")
+    plt.savefig(prefix + "_sc_mu_alpha_y.png")
+    model = LinearRegression(fit_intercept = False)
+    reg = model.fit(np.asarray(merged['mu_y']).reshape(-1, 1), np.asarray(merged['alpha_y']))
+    print("mu vs alpha y")
+    print(reg.score(np.asarray(merged['mu_y']).reshape(-1, 1), np.asarray(merged['alpha_y'])))
+    plt.close()
+
 def main():
     args = parse_arguments()
     rep1 = read_sc(args.rep1)
