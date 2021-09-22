@@ -1,73 +1,16 @@
+'''
+Scratch for MASCOT.
+First just write all the utility functions. 
+'''
 import networkx as nx
 import os, sys
 from networkx.algorithms.components import connected
 import numpy as np
 import pandas as pd
 import random
-import pickle
+import os
 from collections import Counter
 from collections import OrderedDict
-import matplotlib.pyplot as plt
-import util
-
-def draw_graph(graph, prefix):
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph)
-    edges,weights = zip(*nx.get_edge_attributes(graph,'weight').items())
-    nx.draw(graph, pos, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_graph.png")
-
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph)
-    edges,weights = zip(*nx.get_edge_attributes(graph,'weight').items())
-    nx.draw_spring(graph, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_spring_graph.png")
-
-    plt.figure(figsize = (12, 8))
-    plt.hist(weights, bins = 200)
-    plt.xlabel('Weights')
-    plt.yscale('log')
-    plt.savefig(prefix + "_weights_hist.png")
-
-    plt.figure(figsize = (12, 8))
-    (x,y) = util.ecdf(weights)
-    plt.scatter(x = x, y = y)
-    plt.ylabel('percentage')
-    plt.xlabel('edge weights')
-    plt.savefig(prefix + '_weights_cdf.png')
-    plt.show()
-
-    graph_filtered = graph
-    edge_weights = nx.get_edge_attributes(graph_filtered, 'weight')
-    #Only keep edges with atleast weight 2
-    graph_filtered.remove_edges_from((e for e, w in edge_weights.items() if w < 2))
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph_filtered)
-    edges,weights = zip(*nx.get_edge_attributes(graph_filtered,'weight').items())
-    nx.draw(graph_filtered, pos, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_filtered_w2_graph.png")
-
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph_filtered)
-    edges,weights = zip(*nx.get_edge_attributes(graph_filtered,'weight').items())
-    nx.draw_circular(graph_filtered, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_filtered_w2_graph_circular.png")
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph_filtered)
-    edges,weights = zip(*nx.get_edge_attributes(graph_filtered,'weight').items())
-    nx.draw_spectral(graph_filtered, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_filtered_w2_graph_spectral.png")
-    plt.figure(figsize = (12, 8))
-    pos = nx.random_layout(graph_filtered)
-    edges,weights = zip(*nx.get_edge_attributes(graph_filtered,'weight').items())
-    nx.draw_spring(graph_filtered, node_color='k', node_size = 5,
-            edgelist=edges, edge_color=weights, width=1.0, edge_cmap=plt.cm.Blues)
-    plt.savefig(prefix + "_filtered_w2_graph_spring.png")
 ############################ 
 ############################ Look at the depth #################################
 ############################ 
@@ -85,27 +28,22 @@ def return_read_count(path):
     return depth
 
 
-def return_tripBC_num(path):
+def return_tripBC(path):
     tripBC_list = []
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
-            trio = line.rstrip("\n").split(' ')
+            trio = line.rstrip("\n").split('\t')
             try:
                 if len(trio) == 4:
                     _,_,tripBC,_ = trio
             except ValueError: 
-                print('Not getting the correct input')            
-            tripBC_list.append(tripBC)
-    tripBC_num = set(tripBC_list)
-    return len(tripBC_num)
-
-########################## tripBC read count vs occurrence. ####################
-
-def return_tripBCs_depth():
-    '''
-    Does it matter? To get a sort of correlation between the sequencing depth and
-    '''
-    pass
+                print('Not getting the correct input')   
+            if len(tripBC) == 16:         
+                tripBC_list.append(tripBC)
+            else:
+                print('wrong bc:' ,tripBC)
+    tripBC_set = tripBC_list
+    return tripBC_set
 
 ############################ 
 ############################ Error Correction for TRIP #########################
@@ -131,10 +69,12 @@ def sample_hamming_distance(path, sample_size = 100000):
     tripBC_list = []
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
-            trio = line.rstrip("\n").split(' ')
+            trio = line.rstrip("\n").split('\t')
             try:
                 if len(trio) == 4:
                     _,_,tripBC,_ = trio
+                elif len(trio) == 3:
+                    _,_,tripBC = trio
             except ValueError: 
                 print('Not getting the correct input') 
             if len(tripBC) == 16:           
@@ -233,7 +173,6 @@ def order_tripBCs(tripBCs):
     sorted_tripBCs = OrderedDict(sorted_tripBCs)
     sorted_tripBCs_list = list(sorted_tripBCs.keys())
     return sorted_tripBCs_list
-
 def write_correct_tripBCs(trios, collapsed_tripBCs):
     '''
     Match new trios with the collapsed tripBCs
@@ -245,7 +184,10 @@ def write_correct_tripBCs(trios, collapsed_tripBCs):
         except:
             print(line)
             continue
-        new_tripBC = collapsed_tripBCs[trip_bc]
+        if collapsed_tripBCs[trip_bc] != None:
+            new_tripBC = collapsed_tripBCs[trip_bc]
+        else:
+            new_tripBC = trip_bc
         pop_list.append([cell_bc,umi,new_tripBC])        
     return pop_list
 
@@ -267,6 +209,104 @@ def error_correction(path):
     corrected_trios = write_correct_tripBCs(trios, collapsed_tripBCs)
     corrected_trios = pd.DataFrame(corrected_trios, columns= ['cellBC', 'umi', 'tripBC'])
     return corrected_trios
+###########################
+########################### Bulk Error Correction ##############################
+##########################
+
+########################## Check hamming distribution
+# Considerations for this analysis see notebook: CAS April 12th 2021
+def read_bulk_bc(path):
+    print(os.path.splitext(path)[1])
+    if os.path.splitext(path)[1] == '.txt':
+        bulk_bc_list = []
+        with open(path) as f:
+            next(f)
+            for line in f:
+                bulk_bc = line.rstrip('\n')
+                if len(bulk_bc) == 16:
+                    bulk_bc_list.append(bulk_bc)
+                else:
+                    print('not 16:', bulk_bc)
+    elif os.path.splitext(path)[1] == '.tsv':
+        bulk_bc_df = pd.read_csv(path, sep = '\t')
+        bulk_bc_list = list(bulk_bc_df['tBC'].values)
+    return bulk_bc_list
+
+def check_bulk_hamming(bulk_bc_list, trio, trial = 10000):
+    hamming_list = []
+    for bulk_bc in bulk_bc_list:
+        sc_tripBC_list = random.sample(trio, trial)
+        for sc_tripBC in sc_tripBC_list:
+            hamming_list.append(hammingDist(bulk_bc, sc_tripBC))
+    return hamming_list
+
+########################### Error Correction using bulk RNA-seq ################
+def read_in_trio_list(path):
+    tripData = []
+    with open(path) as cellumis_tripbc_fh:
+        for line in cellumis_tripbc_fh:
+            trio = line.rstrip("\n").split('\t')
+            if len(trio) == 4:
+                cell,umi,trip_bc, _ = trio
+            else: 
+                cell,umi,trip_bc = trio                
+            tripData.append([cell,umi,trip_bc])
+    return tripData
+
+def bulk_error_correction(sc_tripBC_list, bulk_tripBC_list, maximum_error = 8):
+    '''
+    Correct the scTRIP tripBC with bulk tripBC, with maximum hamming distance. 
+    Also return the non-corrected ones.
+    '''
+    correspondence = dict.fromkeys(sc_tripBC_list)
+    i = 0
+    j = 0
+    for sc_tripBC in sc_tripBC_list:
+        #check if it's closer to any of the bulk_tripBCs
+        matched_list = {}
+        for bulk_tripBC in bulk_tripBC_list:
+            # initiate a list by value
+            if hammingDist(sc_tripBC, bulk_tripBC) <= maximum_error:
+                #print('successful!')
+                matched_list[bulk_tripBC] = hammingDist(sc_tripBC,bulk_tripBC)
+        # check if we have any match
+        if len(matched_list) == 0:
+            # print('we see a wrong BC')
+            i += 1
+        else:
+            # sort the matched barcode 
+            sorted_matched_list = {k:v for k,v in sorted(matched_list.items(), key = lambda item:item[1])}
+            # check if the closest match is unique
+            smallest_match = min(sorted_matched_list.values())
+            num_smallest_match = list(sorted_matched_list.values()).count(smallest_match)
+            if num_smallest_match == 1:
+                # unique small match
+                correspondence[sc_tripBC] = list(sorted_matched_list.keys())[list(sorted_matched_list.values()).index(smallest_match)]
+            else:
+                j += 1
+        # Count non-match barcodes
+
+    print(f'The total number of not assigned sc tripBC is {i}, and it is {i/len(sc_tripBC_list)}')
+    print(f'The total number of ambiguous sc tripBC is {j}, and it is {j/len(sc_tripBC_list)}')
+    return correspondence
+def error_correction_with_bulk(trios_path, bulk_path):
+    '''
+    Right now it is a messsssssssss!
+    '''
+    bulk_bc_list = read_bulk_bc(bulk_path)
+    print(f'the total number of bulk TRIP BC is {len(bulk_bc_list)}')
+    trios = read_in_trio_list(trios_path)
+    sc_tripBC_list = [a[2] for a in trios]
+    print('we are going to correct sc tripBC')
+    corrected_sc_tripBC_dict = bulk_error_correction(sc_tripBC_list, bulk_bc_list)
+    corrected_trios = write_correct_tripBCs(trios, corrected_sc_tripBC_dict)
+    corrected_trios = pd.DataFrame(corrected_trios, columns= ['cellBC', 'umi', 'tripBC'])
+    corrected_trios = remove_ambiguous_tripBC(corrected_trios,bulk_bc_list)
+    return corrected_trios
+
+###########################
+# additional code 20210607
+###########################
 
 def remove_ambiguous_tripBC(corrected_trios, bulk_bc_list):
     '''
@@ -274,7 +314,6 @@ def remove_ambiguous_tripBC(corrected_trios, bulk_bc_list):
     ''' 
     pop_df = corrected_trios[corrected_trios.tripBC.isin(bulk_bc_list)]
     return pop_df
-
 ############################ 
 ############################ Confidence Graph ##################################
 ############################ 
@@ -282,7 +321,7 @@ def read_in_trio(path):
     tripData = []
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
-            trio = line.rstrip("\n").split()
+            trio = line.rstrip("\n").split('\t')
             if len(trio) == 4:
                 cell,umi,trip_bc, _ = trio
             else: 
@@ -302,24 +341,136 @@ def hash_BCs(trio):
         tripbc_dict[bc] = num
     return tripbc_dict
 
-def read_bulk_bc(path):
-    print(os.path.splitext(path)[1])
-    if os.path.splitext(path)[1] == '.txt':
-        bulk_bc_list = []
-        with open(path) as f:
-            next(f)
-            for line in f:
-                bulk_bc = line.rstrip('\n')
-                if len(bulk_bc) == 16:
-                    bulk_bc_list.append(bulk_bc)
-                else:
-                    print('not 16:', bulk_bc)
-    elif os.path.splitext(path)[1] == '.tsv':
-        bulk_bc_df = pd.read_csv(path, sep = '\t')
-        bulk_bc_list = list(bulk_bc_df['tBC'].values)
-    return bulk_bc_list
+def generate_graph(trio, tripbc_dict):
+    '''
+    Function to create a graph for the barcodes.
+    Think about OOP in next iteration
+    '''
+    #Initiate graph
+    G = nx.Graph()
+    # Return the list of tripBC values
+    nodes = list(tripbc_dict.values())
+    # Initiate Nodes
+    G.add_nodes_from(nodes)
+    # Create edges
+    cellBC_list = list(set(trio['cellBC'].values))
+    # Create a dictionary to hold edges and weights
+    # TODO: break this up into smaller functional units
+    edge_dict = {}
+    # This part is really really slow, why?
+    for cellBC in cellBC_list:
+        same_cell_data = trio.loc[trio['cellBC'] == cellBC]
+        # TODO: this is not optimal, I am basically rewriting a graph
+        # Construction again, need to be better,
+        tripBC_list = list(set(same_cell_data['tripBC'].values))
+        # If there is no tripBC?
+        # Trick is to drop the used tripBC
+        not_look_list = []
+        if len(tripBC_list) > 0:
+            tripBC = tripBC_list[0]
+            not_look_list.append(tripBC)
+            tripBC_to_connect = [n for n in tripBC_list if n != tripBC]
+            if tripBC not in edge_dict.keys():
+                # Initiate another dict
+                edge_dict[tripBC] = {}
+                # Add all other tripBC as connected 
+                for connected_tripBC in tripBC_to_connect:
+                    # Slice the df with same cellBC, and the connected tripBC
+                    # We divide it by 2 because it's double counted
+                    temp_weight = len(same_cell_data.loc[same_cell_data['tripBC'] == connected_tripBC, 'umi'])
+                    edge_dict[tripBC][connected_tripBC] = temp_weight
+            # Now we deal with the situation wither tripBC in already in the edge_dict
+            else: 
+                for connected_tripBC in tripBC_to_connect:
+                    if connected_tripBC not in edge_dict[tripBC].keys():
+                        # Slice the df to add new key to the weight
+                        temp_weight = len(same_cell_data.loc[same_cell_data['tripBC'] == connected_tripBC, 'umi'])
+                        edge_dict[tripBC][connected_tripBC] = temp_weight                        
+                    else:
+                        temp_weight = len(same_cell_data.loc[same_cell_data['tripBC'] == connected_tripBC, 'umi'])
+                        # Update the weights
+                        edge_dict[tripBC][connected_tripBC] += temp_weight
+                   
+    #### Now we deal with the edge dict
+    for start_node in edge_dict.keys():
+        end_node_dict = edge_dict[start_node]
+        # Get the numerical 
+        hashed_start = tripbc_dict[start_node]
+        for end_node in end_node_dict.keys():
+            hashed_end = tripbc_dict[end_node]
+            weight = end_node_dict[end_node]
+            # Add edge to the graph
+            G.add_edge(hashed_start, hashed_end, weight = weight)
+    return G
 
-########################## UMI Graph ###########
+
+
+    
+
+######################### Graph Operation ######################################
+
+# Look at the distributions and maintain true connections 
+
+# Empirical CDF
+
+def ecdf(data):
+    """ https://cmdlinetips.com/2019/05/empirical-cumulative-distribution-function-ecdf-in-python/ """
+    x = np.sort(data)
+    n = x.size
+    y = np.arange(1, n+1) / n
+    return(x,y)
+
+
+
+########################## fast graph ###########
+
+def generate_graph_fast(trio, tripbc_dict):
+    '''
+    Function to create a graph for the barcodes.
+    Think about OOP in next iteration
+    '''
+    #Initiate graph
+    G = nx.Graph()
+    # Return the list of tripBC values
+    nodes = list(tripbc_dict.values())
+    tripBC_list = list(tripbc_dict.keys())
+    # Initiate Nodes
+    G.add_nodes_from(nodes)
+    # Create a dictionary to hold edges and weights
+    # TODO: break this up into smaller functional units
+    edge_dict = {}
+    ## Construct a list of beginTRIP:{endtripDictList} where endTRIP:weights
+    # Drop umi
+    duo = trio.drop(['umi'], axis = 1)
+    # print total length
+    print(f'the total length of duo is {len(duo)}')
+    # Get unique cell --> tripBC counts
+    duo = duo.drop_duplicates()
+    print(f'the unique duos have {len(duo)} members')
+    for pos, start_tripBC in enumerate(tripBC_list):
+        temp_tripBC_list = [x for x in tripBC_list if x != start_tripBC]
+        print(f'We are on {pos} of {len(tripBC_list)} start Node')
+        edge_dict[start_tripBC] = {}
+        for end_tripBC in temp_tripBC_list:
+            cellBC_start = set(duo.loc[duo['tripBC'] == start_tripBC]['cellBC'].values)
+            cellBC_end = set(duo.loc[duo['tripBC'] == end_tripBC]['cellBC'].values)
+            weight = len(cellBC_start.intersection(cellBC_end))
+            edge_dict[start_tripBC][end_tripBC] = weight
+        #### Now we deal with the edge dict
+    for start_node in edge_dict.keys():
+        end_node_dict = edge_dict[start_node]
+        # Get the numerical 
+        hashed_start = tripbc_dict[start_node]
+        for end_node in end_node_dict.keys():
+            hashed_end = tripbc_dict[end_node]
+            weight = end_node_dict[end_node]
+            # Add edge to the graph
+            G.add_edge(hashed_start, hashed_end, weight = weight)
+    return G
+
+
+
+# The third iteration of the graph generation, this time I would like to add a 
 
 def generate_graph_count_umi(trio, tripbc_dict):
     '''
@@ -402,37 +553,14 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
     Output: new trios that all the filters are done.
     '''
     # 
-    print("min_umi_per_cell", min_umi_per_cell, file = sys.stderr)
-    print("max_tripBC_per_cell", max_tripBC_per_cell, file = sys.stderr)
     cell_bc_list = list(set(trios['cellBC'].values))
     filtered_cellBC_list = []
     for cell_bc in cell_bc_list:
         data_slice = trios[trios['cellBC'] == cell_bc]
+        print(f'we are dealing with {cell_bc}')
         if len(data_slice) > min_umi_per_cell:
             if len(set(data_slice['tripBC'])) < max_tripBC_per_cell:
                 filtered_cellBC_list.append(cell_bc)
     # filter based on min umi per cell
-    umi_filtered_trio = trios[trios.cellBC.isin(filtered_cellBC_list)]
+    umi_filtered_trio = trios[trios.cellBC.isin(cell_bc_list)]
     return umi_filtered_trio
-
-
-
-
-if __name__ == "__main__":
-    trio_dir = sys.argv[1]
-    # Read in the LP trios
-    trio = read_in_trio(trio_dir)
-    # Read in the mapped barcode list
-    tripBC_list = sys.argv[2]
-    op_prefix = sys.argv[3]
-    tripBC = read_bulk_bc(tripBC_list)
-    trio_clean = remove_ambiguous_tripBC(trio, tripBC)
-    trio_filtered = pre_filter(trio_clean)
-    tripbc_dict = hash_BCs(trio_filtered)
-    with open(op_prefix + '_has.pickle', 'wb') as handle:
-        pickle.dump(tripbc_dict, handle, protocol= pickle.HIGHEST_PROTOCOL)
-    graph = generate_graph_count_umi(trio_filtered, tripbc_dict)
-    with open(op_prefix + '_graph.pickle', 'wb') as handle:
-        pickle.dump(graph, handle, protocol = pickle.HIGHEST_PROTOCOL)
-
-
