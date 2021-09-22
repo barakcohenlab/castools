@@ -24,5 +24,7 @@ with open(cas_cells_f) as fh:
             cas_cellbcs[cas_cell] = 1
             if cas_cell in tenx_cellbcs:
                 n_overlap += 1
+        if cas_cell in tenx_cellbcs:
+            print(line.rstrip("\n"))
 
-print(len(tenx_cellbcs), len(cas_cellbcs), n_overlap)
+print(len(tenx_cellbcs), len(cas_cellbcs), n_overlap, file = sys.stderr)
