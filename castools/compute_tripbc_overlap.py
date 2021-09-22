@@ -24,8 +24,8 @@ with open(cas_trips_f) as fh:
                 n_overlap += 1
         # Print all the lines
         if cas_trip in bulk_tripbcs:
-            print(line.rstrip("\n"), "overlap")
-        else:
-            print(line.rstrip("\n"), "no-overlap")
+            print(line.rstrip("\n"))
+        #else:
+        #    print(line.rstrip("\n"), "no-overlap")
 
 print(len(bulk_tripbcs), len(cas_tripbcs), n_overlap, file = sys.stderr)
