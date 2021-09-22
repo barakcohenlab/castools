@@ -369,7 +369,8 @@ def count_umi_weight_helper(trio, start_tripBC, end_tripBC):
     end_cellBC = set(end_trio_df['cellBC'].values)
     # Intersect 
     common_cellBC = start_cellBC.intersection(end_cellBC)
-    weight = len(start_trio_df[start_trio_df['cellBC'].isin(common_cellBC)]) + len(end_trio_df[end_trio_df['cellBC'].isin(common_cellBC)])
+    #weight = len(start_trio_df[start_trio_df['cellBC'].isin(common_cellBC)]) + len(end_trio_df[end_trio_df['cellBC'].isin(common_cellBC)])
+    weight = len(common_cellBC)
     return weight
 
 def count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC):
@@ -419,7 +420,7 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
 
 
 
-if __name__ == "__main__":
+def main():
     trio_dir = sys.argv[1]
     # Read in the LP trios
     trio = read_in_trio(trio_dir)
@@ -435,5 +436,7 @@ if __name__ == "__main__":
     graph = generate_graph_count_umi(trio_filtered, tripbc_dict)
     with open(op_prefix + '_graph.pickle', 'wb') as handle:
         pickle.dump(graph, handle, protocol = pickle.HIGHEST_PROTOCOL)
+    draw_graph(graph, op_prefix)
 
-
+if __name__ == "__main__":
+    main()
