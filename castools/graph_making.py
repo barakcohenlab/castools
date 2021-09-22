@@ -339,10 +339,11 @@ def generate_graph_count_umi(trio, tripbc_dict):
     edge_dict = {}
     ## Construct a list of beginTRIP:{endtripDictList} where endTRIP:weights
     # Do not drop umi
-    print(f'the unique duos have {len(trio)} members')
+    print(f'the unique duos have {len(trio)} members', file = sys.stderr)
+    print(f'the number of trip barcodes is {len(tripBC_list)} members', file = sys.stderr)
     for pos, start_tripBC in enumerate(tripBC_list):
         temp_tripBC_list = [x for x in tripBC_list if x != start_tripBC]
-        print(f'We are on {pos} of {len(tripBC_list)} start Node')
+        print(f'We are on {pos + 1} of {len(tripBC_list)} start Node', file = sys.stderr)
         edge_dict[start_tripBC] = {}
         for end_tripBC in temp_tripBC_list:
             weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC)
