@@ -173,6 +173,7 @@ def order_tripBCs(tripBCs):
     sorted_tripBCs = OrderedDict(sorted_tripBCs)
     sorted_tripBCs_list = list(sorted_tripBCs.keys())
     return sorted_tripBCs_list
+
 def write_correct_tripBCs(trios, collapsed_tripBCs):
     '''
     Match new trios with the collapsed tripBCs
@@ -221,7 +222,7 @@ def read_in_trio(path):
     tripData = []
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
-            trio = line.rstrip("\n").split('\t')
+            trio = line.rstrip("\n").split()
             if len(trio) == 4:
                 cell,umi,trip_bc, _ = trio
             else: 
@@ -341,6 +342,8 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
     Output: new trios that all the filters are done.
     '''
     # 
+    print("min_umi_per_cell", min_umi_per_cell, file = sys.stderr)
+    print("max_tripBC_per_cell", max_tripBC_per_cell, file = sys.stderr)
     cell_bc_list = list(set(trios['cellBC'].values))
     filtered_cellBC_list = []
     for cell_bc in cell_bc_list:
@@ -349,7 +352,7 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
             if len(set(data_slice['tripBC'])) < max_tripBC_per_cell:
                 filtered_cellBC_list.append(cell_bc)
     # filter based on min umi per cell
-    umi_filtered_trio = trios[trios.cellBC.isin(cell_bc_list)]
+    umi_filtered_trio = trios[trios.cellBC.isin(filtered_cellBC_list)]
     return umi_filtered_trio
 
 
@@ -361,14 +364,15 @@ if __name__ == "__main__":
     trio = read_in_trio(trio_dir)
     # Read in the mapped barcode list
     tripBC_list = sys.argv[2]
+    op_prefix = sys.argv[3]
     tripBC = read_bulk_bc(tripBC_list)
     trio_clean = remove_ambiguous_tripBC(trio, tripBC)
     trio_filtered = pre_filter(trio_clean)
     tripbc_dict = hash_BCs(trio_filtered)
-    with open('lp1_v3_graph_has.pickle', 'wb') as handle:
+    with open(op_prefix + '_has.pickle', 'wb') as handle:
         pickle.dump(tripbc_dict, handle, protocol= pickle.HIGHEST_PROTOCOL)
     graph = generate_graph_count_umi(trio_filtered, tripbc_dict)
-    with open('lp1_v3_graph.pickle', 'wb') as handle:
+    with open(op_prefix + '_graph.pickle', 'wb') as handle:
         pickle.dump(graph, handle, protocol = pickle.HIGHEST_PROTOCOL)
 
 
