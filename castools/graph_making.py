@@ -346,7 +346,8 @@ def generate_graph_count_umi(trio, tripbc_dict):
         print(f'We are on {pos + 1} of {len(tripBC_list)} start Node', file = sys.stderr)
         edge_dict[start_tripBC] = {}
         for end_tripBC in temp_tripBC_list:
-            weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC)
+            weight = count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC)
+            # weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC)
             edge_dict[start_tripBC][end_tripBC] = weight
         #### Now we deal with the edge dict
     for start_node in edge_dict.keys():
@@ -391,8 +392,9 @@ def count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC):
         start_cell_bc = start_trio_df.loc[start_trio_df['cellBC'] == cell_bc]
         end_cell_bc = end_trio_df.loc[end_trio_df['cellBC'] == cell_bc]
         if (len(start_cell_bc) > 2) and (len(end_cell_bc) > 2):
-            weight += len(start_cell_bc) 
-            weight += len(end_cell_bc)
+            # weight += len(start_cell_bc) 
+            # weight += len(end_cell_bc)
+            weight = (len(start_cell_bc) + len(end_cell_bc))/2
     return weight
 
 
