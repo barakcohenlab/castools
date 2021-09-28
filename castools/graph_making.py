@@ -371,7 +371,7 @@ def count_umi_weight_helper(trio, start_tripBC, end_tripBC):
     # Intersect 
     common_cellBC = start_cellBC.intersection(end_cellBC)
     #weight = len(start_trio_df[start_trio_df['cellBC'].isin(common_cellBC)]) + len(end_trio_df[end_trio_df['cellBC'].isin(common_cellBC)])
-    weight = len(common_cellBC)
+    weight = len(common_cellBC) # Weight is the number of shared cells between the two TRIPs
     return weight
 
 def count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC):
@@ -389,12 +389,11 @@ def count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC):
     common_cellBC = start_cellBC.intersection(end_cellBC)
     weight = 0
     for cell_bc in common_cellBC:
-        start_cell_bc = start_trio_df.loc[start_trio_df['cellBC'] == cell_bc]
-        end_cell_bc = end_trio_df.loc[end_trio_df['cellBC'] == cell_bc]
-        if (len(start_cell_bc) > 2) and (len(end_cell_bc) > 2):
-            # weight += len(start_cell_bc) 
-            # weight += len(end_cell_bc)
-            weight = (len(start_cell_bc) + len(end_cell_bc))/2
+        start_cell_umi = start_trio_df.loc[start_trio_df['cellBC'] == cell_bc]
+        end_cell_umi = end_trio_df.loc[end_trio_df['cellBC'] == cell_bc]
+        if (len(start_cell_umi) > 2) and (len(end_cell_umi) > 2): #atleast two UMIs at both the TRIPs in the shared cell
+            # Weight is the average number of UMIs in the shared cell at two locations
+            weight = (len(start_cell_umi) + len(end_cell_umi))/2
     return weight
 
 
