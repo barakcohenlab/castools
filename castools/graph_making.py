@@ -342,23 +342,23 @@ def generate_graph_count_umi(trio, tripbc_dict):
     print(f'the unique duos have {len(trio)} members', file = sys.stderr)
     print(f'the number of trip barcodes is {len(tripBC_list)} members', file = sys.stderr)
     for pos, start_tripBC in enumerate(tripBC_list):
-        temp_tripBC_list = [x for x in tripBC_list if x != start_tripBC]
         print(f'We are on {pos + 1} of {len(tripBC_list)} start Node', file = sys.stderr)
         edge_dict[start_tripBC] = {}
-        for end_tripBC in temp_tripBC_list:
-            weight = count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC)
-            # weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC)
+        for end_tripBC in tripBC_list[pos + 1:]: # Compute only top half of the matrix since it's symmetric
+            #weight = count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC) # Number of UMI in shared cells
+            weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC) # Count number of shared cells
             edge_dict[start_tripBC][end_tripBC] = weight
         #### Now we deal with the edge dict
-    for start_node in edge_dict.keys():
-        end_node_dict = edge_dict[start_node]
-        # Get the numerical 
+    for start_node in edge_dict:
+        # Get the numerical
         hashed_start = tripbc_dict[start_node]
-        for end_node in end_node_dict.keys():
+        for end_node in edge_dict[start_node]:
             hashed_end = tripbc_dict[end_node]
-            weight = end_node_dict[end_node]
+            weight = edge_dict[start_node][end_node]
             # Add edge to the graph
-            G.add_edge(hashed_start, hashed_end, weight = weight)
+            if weight > 0:
+                G.add_edge(hashed_start, hashed_end, weight = weight)
+                print("Graph-out", hashed_start, hashed_end, weight, file = sys.stderr)
     return G
 
 def count_umi_weight_helper(trio, start_tripBC, end_tripBC):
