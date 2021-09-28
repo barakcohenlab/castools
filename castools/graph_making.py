@@ -341,12 +341,13 @@ def generate_graph_count_umi(trio, tripbc_dict):
     # Do not drop umi
     print(f'the unique duos have {len(trio)} members', file = sys.stderr)
     print(f'the number of trip barcodes is {len(tripBC_list)} members', file = sys.stderr)
+    trip_triodf = save_trio_dfs(tripBC_list, trio)
     for pos, start_tripBC in enumerate(tripBC_list):
         print(f'We are on {pos + 1} of {len(tripBC_list)} start Node', file = sys.stderr)
         edge_dict[start_tripBC] = {}
         for end_tripBC in tripBC_list[pos + 1:]: # Compute only top half of the matrix since it's symmetric
             #weight = count_uni_weight_filter_helper(trio, start_tripBC, end_tripBC) # Number of UMI in shared cells
-            weight = count_umi_weight_helper(trio, start_tripBC, end_tripBC) # Count number of shared cells
+            weight = count_umi_weight_helper(trio, trip_triodf, start_tripBC, end_tripBC) # Count number of shared cells
             edge_dict[start_tripBC][end_tripBC] = weight
         #### Now we deal with the edge dict
     for start_node in edge_dict:
@@ -361,10 +362,19 @@ def generate_graph_count_umi(trio, tripbc_dict):
                 print("Graph-out", hashed_start, hashed_end, weight, file = sys.stderr)
     return G
 
-def count_umi_weight_helper(trio, start_tripBC, end_tripBC):
+def save_trio_dfs(tripbc_list, trio):
+    # Save subset of table by trio for faster access
+    trip_triodf = {} #key is tripbc, value is pandas dataframe subset
+    for tripBC in tripbc_list:
+        # Slice the total df
+        trio_df = trio.loc[trio['tripBC'] == tripBC]
+        trip_triodf[tripBC] = trio_df
+    return trip_triodf
+
+def count_umi_weight_helper(trio, trip_triodf, start_tripBC, end_tripBC):
     # Slice the total df
-    start_trio_df = trio.loc[trio['tripBC'] == start_tripBC]
-    end_trio_df = trio.loc[trio['tripBC'] == end_tripBC]
+    start_trio_df = trip_triodf[start_tripBC]
+    end_trio_df = trip_triodf[end_tripBC]
     # Get the cellBC
     start_cellBC = set(start_trio_df['cellBC'].values)
     end_cellBC = set(end_trio_df['cellBC'].values)
@@ -404,10 +414,10 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
         max_tripBC_per_cell: the maximum number of tripBC that a cell can have. 
     Output: new trios that all the filters are done.
     '''
-    # 
     print("min_umi_per_cell", min_umi_per_cell, file = sys.stderr)
     print("max_tripBC_per_cell", max_tripBC_per_cell, file = sys.stderr)
     cell_bc_list = list(set(trios['cellBC'].values))
+    print(f"Number of cells before filtering {len(cell_bc_list)}", file = sys.stderr)
     filtered_cellBC_list = []
     for cell_bc in cell_bc_list:
         data_slice = trios[trios['cellBC'] == cell_bc]
@@ -415,7 +425,10 @@ def pre_filter(trios, min_umi_per_cell = 25, max_tripBC_per_cell = 100):
             if len(set(data_slice['tripBC'])) < max_tripBC_per_cell:
                 filtered_cellBC_list.append(cell_bc)
     # filter based on min umi per cell
+    print(f"Number of cells after filtering {len(filtered_cellBC_list)}", file = sys.stderr)
     umi_filtered_trio = trios[trios.cellBC.isin(filtered_cellBC_list)]
+    print(f"Number of trios before filtering {len(trios)}", file = sys.stderr)
+    print(f"Number of trios after filtering {len(umi_filtered_trio)}", file = sys.stderr)
     return umi_filtered_trio
 
 
