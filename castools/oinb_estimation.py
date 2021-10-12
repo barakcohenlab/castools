@@ -57,12 +57,17 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
             keys_to_remove.append(key)
     plt.hist(np.log10(trips_in_cell))
     plt.savefig(filename + "_trips_per_cell.png")
+    plt.figure(1)
     plt.hist(np.log10(numis_in_cell))
     plt.savefig(filename + "_umis_per_cell.png")
     numis_in_cell.sort(reverse = True)
     print(np.arange(len(numis_in_cell)), numis_in_cell)
+    plt.figure(2)
     plt.scatter(np.arange(len(numis_in_cell)), numis_in_cell)
     plt.savefig(filename + "_rank_umis_per_cell.png")
+    plt.figure(3)
+    plt.scatter(np.arange(len(numis_in_cell)), np.log10(numis_in_cell))
+    plt.savefig(filename + "_rank_log_umis_per_cell.png")
     for k in keys_to_remove:
         del trio_to_process[k]
     logger.info(f'length of trio_to_process after is {len(trio_to_process)}')
