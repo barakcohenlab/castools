@@ -8,12 +8,14 @@ import sys
 from datetime import datetime
 
 
-def extract_scTrip_fast(path,min_umi=25, max_umi = 800000, min_cells = 500):
+def extract_scTrip_fast(path, min_umi=25, max_umi = 800000,
+                        min_cells = 500, min_trip_percell = 5):
     '''
-    Function to extract 
+    Function to extract
     '''
     logger.info(f"Minimum UMI per cell {min_umi}")
     logger.info(f"Maximum UMI per cell {max_umi}")
+    logger.info(f"Minimum trip per cell {min_trip_percell}")
     tripData = [] #Key is the cell id, value is a set of UMIs
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
@@ -37,18 +39,22 @@ def extract_scTrip_fast(path,min_umi=25, max_umi = 800000, min_cells = 500):
         cell_to_umi[cell].add(umi)
     cell_to_normalizationfactor = {}
     for cell in cell_to_trip:
-        logger.info(f"cell, normalization factor  {cell}, {float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])}")
+        logger.debug(f"cell, normalization factor  {cell}, {float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])}")
         cell_to_normalizationfactor[cell] = float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])
     logger.info(f'length of trio_to_process before is {len(trio_to_process)}')
     keys_to_remove = []
-    logger.info("max umi_per_cell", max([len(x) for x in trio_to_process.values()]))
-    logger.info("mean umi_per_cell", np.mean([len(x) for x in trio_to_process.values()]))
-    logger.info("median umi_per_cell", np.median([len(x) for x in trio_to_process.values()]))
-    logger.info("std umi_per_cell", np.std([len(x) for x in trio_to_process.values()]))
+    logger.info(f"max umi_per_cell {max([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"mean umi_per_cell {np.mean([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"median umi_per_cell {np.median([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"std umi_per_cell {np.std([len(x) for x in trio_to_process.values()])}")
+    trips_in_cell = []
     for key in trio_to_process.keys():
         logging.debug(key, len(trio_to_process[key]))
-        if len(trio_to_process[key]) < min_umi or len(trio_to_process[key]) > max_umi:
+        trips_in_cell.append(len(cell_to_trip[key]))
+        if len(trio_to_process[key]) < min_umi or len(trio_to_process[key]) > max_umi or len(cell_to_trip[key]) < min_trip_percell:
             keys_to_remove.append(key)
+    plt.hist(np.log10(trips_in_cell))
+    plt.savefig("trips_per_cell.png")
     for k in keys_to_remove:
         del trio_to_process[k]
     logger.info(f'length of trio_to_process after is {len(trio_to_process)}')
@@ -69,7 +75,7 @@ def extract_scTrip_fast(path,min_umi=25, max_umi = 800000, min_cells = 500):
         counts = []
         for cell in trip_counts[trip_bc]:
             count = len(trip_counts[trip_bc][cell])
-            if count >=0:
+            if count >= 0:
                 # Here I am artificially creating a zero-inflated negative binomial 
                 # By left shift the distribution by 1
                 counts.append(count/cell_to_normalizationfactor[cell])
@@ -84,6 +90,7 @@ def get_oinb_estimate(scTRIP):
     mu_list = []
     alpha_list = []
     mean_list = []
+    median_list = []
     auc_list = []
     var_list = []
     ncells_list = []
@@ -107,12 +114,13 @@ def get_oinb_estimate(scTRIP):
             ncells_list.append(len(counts))
             counts_list.append(list(counts))
             mean_list.append(np.mean(original_counts))
+            median_list.append(np.median(original_counts))
             sum_list.append(np.sum(original_counts))
             var_list.append(np.var(original_counts))
             auc_list.append(get_auc(original_counts))
-    pop_df = pd.DataFrame([key_list, mean_list, var_list, auc_list, mu_list, alpha_list, ncells_list, counts_list, sum_list])
+    pop_df = pd.DataFrame([key_list, mean_list, median_list, var_list, auc_list, mu_list, alpha_list, ncells_list, counts_list, sum_list])
     pop_df = pop_df.transpose()
-    pop_df.columns = ['tBC', 'mean', 'var','auc', 'mu', 'alpha', 'ncells', 'counts', 'sum']
+    pop_df.columns = ['tBC', 'mean', 'median', 'var','auc', 'mu', 'alpha', 'ncells', 'counts', 'sum']
     return pop_df
 
 def get_auc(list):
@@ -129,7 +137,7 @@ def oinb_estimation(path, filename, args):
     Wrapper function for returning a tsv file with columns:
     'tripBC', 'mean', 'var', 'auc', 'mu', 'alpha'
     '''
-    trip_counts = extract_scTrip_fast(path, args.min_umi_percell, args.max_umi_percell, args.min_cells)
+    trip_counts = extract_scTrip_fast(path, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
     scTRIP_stats = get_oinb_estimate(trip_counts)
     scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 
@@ -162,6 +170,12 @@ def main():
         help="Filter cells that have more than max_umi_percell UMIs",
         type = int,
         default = 800000
+    )
+    parser.add_argument(
+        'min_trip_percell',
+        help="Filter cells that have less than min_trip_percell TRIP barcodes",
+        type = int,
+        default = 5
     )
     args = parser.parse_args()
     oinb_estimation(args.trio, args.file_name, args)

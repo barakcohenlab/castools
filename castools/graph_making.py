@@ -346,7 +346,7 @@ def generate_graph_count_umi(trio, tripbc_dict):
         print(f'We are on {pos + 1} of {len(tripBC_list)} start Node', file = sys.stderr)
         edge_dict[start_tripBC] = {}
         for end_tripBC in tripBC_list[pos + 1:]: # Compute only top half of the matrix since it's symmetric
-            weight = count_uni_weight_filter_helper(trio, trio_triodf, start_tripBC, end_tripBC) # Number of UMI in shared cells
+            weight = count_uni_weight_filter_helper(trio, trip_triodf, start_tripBC, end_tripBC) # Number of UMI in shared cells
             # weight = count_umi_weight_helper(trio, trip_triodf, start_tripBC, end_tripBC) # Count number of shared cells
             edge_dict[start_tripBC][end_tripBC] = weight
         #### Now we deal with the edge dict
