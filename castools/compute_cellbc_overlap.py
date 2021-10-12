@@ -6,7 +6,7 @@ import pandas as pd
 """
 
 tenx_cells = sys.argv[1]
-cellBC = pd.read_csv(sys.argv[2], sep = '\t' , header = ['cellBC', 'umi', 'tBC', 'count'])
+cellBC = pd.read_csv(sys.argv[2], sep = ' ' , names = ['cellBC', 'umi', 'tBC', 'count'])
 tenx_cellbcs = {}
 with gzip.open(tenx_cells, "rb") as fh:
     for line in fh:

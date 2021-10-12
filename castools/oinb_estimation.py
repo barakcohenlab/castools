@@ -8,7 +8,7 @@ import sys
 from datetime import datetime
 
 
-def extract_scTrip_fast(path, min_umi=25, max_umi = 800000,
+def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
                         min_cells = 500, min_trip_percell = 5):
     '''
     Function to extract
@@ -38,9 +38,11 @@ def extract_scTrip_fast(path, min_umi=25, max_umi = 800000,
         cell_to_trip[cell].add(trip_bc)
         cell_to_umi[cell].add(umi)
     cell_to_normalizationfactor = {}
+    numis_in_cell = []
     for cell in cell_to_trip:
         logger.debug(f"cell, normalization factor  {cell}, {float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])}")
         cell_to_normalizationfactor[cell] = float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])
+        numis_in_cell.append(len(cell_to_umi[cell]))
     logger.info(f'length of trio_to_process before is {len(trio_to_process)}')
     keys_to_remove = []
     logger.info(f"max umi_per_cell {max([len(x) for x in trio_to_process.values()])}")
@@ -54,7 +56,13 @@ def extract_scTrip_fast(path, min_umi=25, max_umi = 800000,
         if len(trio_to_process[key]) < min_umi or len(trio_to_process[key]) > max_umi or len(cell_to_trip[key]) < min_trip_percell:
             keys_to_remove.append(key)
     plt.hist(np.log10(trips_in_cell))
-    plt.savefig("trips_per_cell.png")
+    plt.savefig(filename + "_trips_per_cell.png")
+    plt.hist(np.log10(numis_in_cell))
+    plt.savefig(filename + "_umis_per_cell.png")
+    numis_in_cell.sort(reverse = True)
+    print(np.arange(len(numis_in_cell)), numis_in_cell)
+    plt.scatter(np.arange(len(numis_in_cell)), numis_in_cell)
+    plt.savefig(filename + "_rank_umis_per_cell.png")
     for k in keys_to_remove:
         del trio_to_process[k]
     logger.info(f'length of trio_to_process after is {len(trio_to_process)}')
@@ -137,7 +145,7 @@ def oinb_estimation(path, filename, args):
     Wrapper function for returning a tsv file with columns:
     'tripBC', 'mean', 'var', 'auc', 'mu', 'alpha'
     '''
-    trip_counts = extract_scTrip_fast(path, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
+    trip_counts = extract_scTrip_fast(path, filename, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
     scTRIP_stats = get_oinb_estimate(trip_counts)
     scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 
