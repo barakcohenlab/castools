@@ -49,7 +49,7 @@ def filter_based_on_umi(quint_df, filter_BC_list, min_count = 2):
             else:
                 possible_rBC = calculate_hamming(row['tBC'], high_count_tBC)
                 if possible_rBC != 0:
-                    pop_list.append([row['cellBC'], row['umi'], row['tBC'] , row['count']])
+                    pop_list.append([row['cellBC'], row['umi'], possible_rBC , row['count']])
     return pd.DataFrame(pop_list, columns = ['cellBC', 'umi' , 'tBC', 'count'])
 
 def main():
