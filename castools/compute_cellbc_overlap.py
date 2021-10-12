@@ -6,7 +6,7 @@ import pandas as pd
 """
 
 tenx_cells = sys.argv[1]
-cellBC = pd.read_csv(sys.argv[2], sep = '\t' , header = None)
+cellBC = pd.read_csv(sys.argv[2], sep = '\t' , header = ['cellBC', 'umi', 'tBC', 'count'])
 tenx_cellbcs = {}
 with gzip.open(tenx_cells, "rb") as fh:
     for line in fh:
@@ -66,7 +66,7 @@ def cell_bc_ec(quad, cr_cellBC_list):
         if cellBC in barcode_mapping_dict:
             # Here I just printed out the error corrected files
             counter += 1
-            print(barcode_mapping_dict[cellBC], line['umi'], line['pBC'], line['rBC'], line['counts'])
+            print(barcode_mapping_dict[cellBC], line['umi'], line['tBC'], line['count'])
     return counter
     
 num_cells = cell_bc_ec(cellBC, list(tenx_cellbcs.keys()))
