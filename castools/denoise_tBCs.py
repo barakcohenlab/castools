@@ -68,7 +68,7 @@ def main():
     # Process the bulk BCs to make it into a list
     bulk_bcs = bulk_bcs_exp['tBC'].to_list()
     # Denoise the cell based data
-    pop_df = filter_based_on_umi(prom_quint, bulk_bcs,2)
+    pop_df = filter_based_on_umi(prom_quint, bulk_bcs,100)
     # Save it to a tsv file
     pop_df.to_csv(args.exp + args.rep + '.tsv', sep = '\t', index = False)
 if __name__ == '__main__':

@@ -272,7 +272,11 @@ def remove_ambiguous_tripBC(corrected_trios, bulk_bc_list):
     '''
     Helper function to remove ambiguous trip barcodes 
     ''' 
+    print(corrected_trios.shape, file = sys.stderr)
+    print(corrected_trios.tripBC.head())
+    print(bulk_bc_list)
     pop_df = corrected_trios[corrected_trios.tripBC.isin(bulk_bc_list)]
+    print(pop_df.shape, file = sys.stderr)
     return pop_df
 
 ############################ 
@@ -282,7 +286,7 @@ def read_in_trio(path):
     tripData = []
     with open(path) as cellumis_tripbc_fh:
         for line in cellumis_tripbc_fh:
-            trio = line.rstrip("\n").split()
+            trio = line.rstrip("\n").split("\t")
             if len(trio) == 4:
                 cell,umi,trip_bc, _ = trio
             else: 

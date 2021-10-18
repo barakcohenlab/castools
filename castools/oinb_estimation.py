@@ -56,6 +56,7 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
         if len(trio_to_process[key]) < min_umi or len(trio_to_process[key]) > max_umi or len(cell_to_trip[key]) < min_trip_percell:
             keys_to_remove.append(key)
     plt.hist(np.log10(trips_in_cell))
+    plt.xlabel("log10 trips per cell")
     plt.savefig(filename + "_trips_per_cell.png")
     plt.figure(1)
     plt.hist(np.log10(numis_in_cell))
