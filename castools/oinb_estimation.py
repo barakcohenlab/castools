@@ -84,6 +84,12 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
                 trip_counts[trip_bc][cell] = []
             trip_counts[trip_bc][cell].append(umi)
     trip_cells_umi = {}
+    final_trio = []
+    for key, value in trip_cells_umi.items():
+        for key2, value2 in value.items():
+            final_trio.append([key, key2, value2])
+    final_trio = pd.DataFrame(final_trio, columns = ['tripBC', 'cellBC', 'umi'])
+    final_trio.to_csv(filename + "_final_trio.csv", index = False)
     logger.info(f"Minimum number of cells per trip {min_cells}")
     for trip_bc in trip_counts:
         counts = []
@@ -152,7 +158,6 @@ def oinb_estimation(path, filename, args):
     'tripBC', 'mean', 'var', 'auc', 'mu', 'alpha'
     '''
     trip_counts = extract_scTrip_fast(path, filename, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
-    trip_counts.to_csv(filename + "_final_trio.tsv", sep = '\t', index = False)
     scTRIP_stats = get_oinb_estimate(trip_counts)
     scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 
