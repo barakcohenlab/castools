@@ -152,6 +152,7 @@ def oinb_estimation(path, filename, args):
     'tripBC', 'mean', 'var', 'auc', 'mu', 'alpha'
     '''
     trip_counts = extract_scTrip_fast(path, filename, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
+    trip_counts.to_csv(filename + "_final_trio.tsv", sep = '\t', index = False)
     scTRIP_stats = get_oinb_estimate(trip_counts)
     scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 
