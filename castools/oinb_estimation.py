@@ -87,7 +87,8 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     final_trio = []
     for key, value in trip_counts.items():
         for key2, value2 in value.items():
-            final_trio.append([key, key2, value2])
+            for umi in value2:
+                final_trio.append([key, key2, umi])
     final_trio_df = pd.DataFrame(final_trio, columns = ['tripBC', 'cellBC', 'umi'])
     final_trio_df.to_csv(filename + "_final_trio.csv", index = False)
     logger.info(f"Minimum number of cells per trip {min_cells}")
