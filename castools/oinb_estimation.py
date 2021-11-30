@@ -83,14 +83,28 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
             if cell not in trip_counts[trip_bc]:
                 trip_counts[trip_bc][cell] = []
             trip_counts[trip_bc][cell].append(umi)
-    trip_cells_umi = {}
-    final_trio = []
-    for key, value in trip_counts.items():
-        for key2, value2 in value.items():
-            for umi in value2:
-                final_trio.append([key, key2, umi])
-    final_trio_df = pd.DataFrame(final_trio, columns = ['tripBC', 'cellBC', 'umi'])
-    final_trio_df.to_csv(filename + "_final_trio.csv", index = False)
+    # This part needs to be rewritten. To preserve the count matrix.
+    # trip_cells_umi = {}
+    # final_trio = []
+    # for key, value in trip_counts.items():
+    #     for key2, value2 in value.items():
+    #         for umi in value2:
+    #             final_trio.append([key, key2, umi])
+    # final_trio_df = pd.DataFrame(final_trio, columns = ['tripBC', 'cellBC', 'umi'])
+    # final_trio_df.to_csv(filename + "_final_trio.csv", index = False)
+    # New version:
+    # Temporarily load in the pre-processed trio file from the previous step, note 
+    # that the file is a tsv file.
+    temp_raw_trio = pd.read_csv(path, sep = '\t')
+    # Filter out the cells that are not in the final_trio_df
+    filtered_key_list = []
+    for _, value in trip_counts.items():
+        for key, _ in value.items():
+            filtered_key_list.append(key)
+    filtered_key_list = list(set(filtered_key_list))
+    temp_raw_trio = temp_raw_trio[temp_raw_trio['cellBC'].isin(filtered_key_list)]
+    # Save the filtered trio file
+    temp_raw_trio.to_csv(filename + "_final_trio.csv", index = False)
     logger.info(f"Minimum number of cells per trip {min_cells}")
     for trip_bc in trip_counts:
         counts = []
