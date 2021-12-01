@@ -7,7 +7,6 @@ import gzip
 from scipy import stats
 import pickle
 import argparse
-from kneed import KneeLocator
 from datetime import datetime
 
 def calculate_hamming(rBC1, good_list):
@@ -140,7 +139,7 @@ def main():
     trip_counts.to_csv(f'{args.file_name}_filtered_trio.csv', sep = '\t', index = False)
 
 if __name__ == "__main__":
-    logger = logging.getLogger('oinb_log')
+    logger = logging.getLogger('filter_trio_log')
     logger.setLevel(logging.DEBUG)
 
     # create console handler and set level to debug
