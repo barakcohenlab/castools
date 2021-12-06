@@ -84,8 +84,8 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
             if cell not in trip_counts[trip_bc]:
                 trip_counts[trip_bc][cell] = []
             trip_counts[trip_bc][cell].append(umi)
+    trip_cells_umi = {}
     # This part needs to be rewritten. To preserve the count matrix.
-    # trip_cells_umi = {}
     # final_trio = []
     # for key, value in trip_counts.items():
     #     for key2, value2 in value.items():
