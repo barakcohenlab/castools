@@ -13,6 +13,7 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     '''
     Function to extract
     '''
+    logger.info(f"Minimum cells per TRIP {min_cells}")
     logger.info(f"Minimum UMI per cell {min_umi}")
     logger.info(f"Maximum UMI per cell {max_umi}")
     logger.info(f"Minimum trip per cell {min_trip_percell}")
@@ -196,7 +197,7 @@ def main():
     )
     parser.add_argument(
         'min_umi_percell',
-        help="Filter cells that have less than max_umi_percell UMIs",
+        help="Filter cells that have less than min_umi_percell UMIs",
         type = int,
         default = 25
     )
