@@ -9,10 +9,11 @@ from datetime import datetime
 
 
 def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
-                        min_cells = 500, min_trip_percell = 5):
+                        min_cells = 500, min_trip_percell = 5, normalize = True):
     '''
     Function to extract
     '''
+    logger.info(f"Count normalization is set to {normalize}")
     logger.info(f"Minimum cells per TRIP {min_cells}")
     logger.info(f"Minimum UMI per cell {min_umi}")
     logger.info(f"Maximum UMI per cell {max_umi}")
@@ -26,6 +27,7 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     # Before doing anything we need to filter out the cells with min_umi.
     cell_to_trip = {}
     cell_to_umi = {}
+    trip_to_cells = {}
     for line in tripData:
         if len(line) == 4:
             cell,umi,trip_bc, _ = line
@@ -35,27 +37,37 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
             trio_to_process[cell] = []
             cell_to_trip[cell] = set()
             cell_to_umi[cell] = set()
+        if trip_bc not in trip_to_cells:
+            trip_to_cells[trip_bc] = set()
         trio_to_process[cell].append([umi,trip_bc])
         cell_to_trip[cell].add(trip_bc)
         cell_to_umi[cell].add(umi)
+        trip_to_cells[trip_bc].add(cell)
     cell_to_normalizationfactor = {}
     numis_in_cell = []
     for cell in cell_to_trip:
         logger.debug(f"cell, normalization factor  {cell}, {float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])}")
         cell_to_normalizationfactor[cell] = float(len(cell_to_umi[cell]))/len(cell_to_trip[cell])
         numis_in_cell.append(len(cell_to_umi[cell]))
-    logger.info(f'length of trio_to_process before is {len(trio_to_process)}')
+    logger.info(f'observed: length of trio_to_process before is {len(trio_to_process)}')
+    logger.info(f"observed: max umi_per_cell {max([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"observed: mean umi_per_cell {np.mean([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"observed: median umi_per_cell {np.median([len(x) for x in trio_to_process.values()])}")
+    logger.info(f"observed: stdev umi_per_cell {np.std([len(x) for x in trio_to_process.values()])}")
     keys_to_remove = []
-    logger.info(f"max umi_per_cell {max([len(x) for x in trio_to_process.values()])}")
-    logger.info(f"mean umi_per_cell {np.mean([len(x) for x in trio_to_process.values()])}")
-    logger.info(f"median umi_per_cell {np.median([len(x) for x in trio_to_process.values()])}")
-    logger.info(f"std umi_per_cell {np.std([len(x) for x in trio_to_process.values()])}")
     trips_in_cell = []
     for key in trio_to_process.keys():
         logging.debug(key, len(trio_to_process[key]))
         trips_in_cell.append(len(cell_to_trip[key]))
         if len(trio_to_process[key]) < min_umi or len(trio_to_process[key]) > max_umi or len(cell_to_trip[key]) < min_trip_percell:
             keys_to_remove.append(key)
+    cells_per_trip = [] #Plot how many cells per trip barcode.
+    for trip in trip_to_cells:
+        cells_per_trip.append(len(trip_to_cells[trip]))
+    plt.hist(np.log10(cells_per_trip))
+    plt.xlabel("log10 cells per trip barcode")
+    plt.savefig(filename + "_cells_per_trip.png")
+    plt.figure(0)
     plt.hist(np.log10(trips_in_cell))
     plt.xlabel("log10 trips per cell")
     plt.savefig(filename + "_trips_per_cell.png")
@@ -63,7 +75,6 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     plt.hist(np.log10(numis_in_cell))
     plt.savefig(filename + "_umis_per_cell.png")
     numis_in_cell.sort(reverse = True)
-    print(np.arange(len(numis_in_cell)), numis_in_cell)
     plt.figure(2)
     plt.scatter(np.arange(len(numis_in_cell)), numis_in_cell)
     plt.savefig(filename + "_rank_umis_per_cell.png")
@@ -72,7 +83,7 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     plt.savefig(filename + "_rank_log_umis_per_cell.png")
     for k in keys_to_remove:
         del trio_to_process[k]
-    logger.info(f'length of trio_to_process after is {len(trio_to_process)}')
+    logger.info(f'observed: length of trio_to_process after is {len(trio_to_process)}')
     # Now create a new dictionary:
     trip_counts = {}
     for key in trio_to_process.keys():
@@ -106,7 +117,6 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
     temp_raw_trio = temp_raw_trio[temp_raw_trio['cellBC'].isin(filtered_key_list)]
     # Save the filtered trio file
     temp_raw_trio.to_csv(filename + "_final_trio.csv", index = False)
-    logger.info(f"Minimum number of cells per trip {min_cells}")
     for trip_bc in trip_counts:
         counts = []
         for cell in trip_counts[trip_bc]:
@@ -114,10 +124,14 @@ def extract_scTrip_fast(path, filename, min_umi=25, max_umi = 800000,
             if count >= 0:
                 # Here I am artificially creating a zero-inflated negative binomial 
                 # By left shift the distribution by 1
-                counts.append(count/cell_to_normalizationfactor[cell])
+                if normalize:
+                    counts.append(count/cell_to_normalizationfactor[cell])
+                else:
+                    counts.append(count)
         # Only record tripBC with 500 measurement
         if len(counts) >= min_cells:
             trip_cells_umi[trip_bc] = counts
+    logger.info(f'observed: number of TRIP barcodes is {len(trip_cells_umi)}')
     return trip_cells_umi
 
 def get_oinb_estimate(scTRIP):
@@ -133,7 +147,7 @@ def get_oinb_estimate(scTRIP):
     counts_list = []
     sum_list = []
     for key in keys:
-        logger.info(f'we are dealing with {key}')
+        logger.info(f'we are dealing with cell {key}')
         counts = list(scTRIP[key])
         if max(counts) != 0:
             key_list.append(key)
@@ -173,7 +187,7 @@ def oinb_estimation(path, filename, args):
     Wrapper function for returning a tsv file with columns:
     'tripBC', 'mean', 'var', 'auc', 'mu', 'alpha'
     '''
-    trip_counts = extract_scTrip_fast(path, filename, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell)
+    trip_counts = extract_scTrip_fast(path, filename, args.min_umi_percell, args.max_umi_percell, args.min_cells, args.min_trip_percell, args.normalize)
     scTRIP_stats = get_oinb_estimate(trip_counts)
     scTRIP_stats.to_csv(filename + '.tsv', index = None, sep = '\t')
 
@@ -212,6 +226,12 @@ def main():
         help="Filter cells that have less than min_trip_percell TRIP barcodes",
         type = int,
         default = 5
+    )
+    parser.add_argument(
+        '--normalize',
+        help="Normalize counts by UMIs per TRIP, for each cell",
+        default = False,
+        action = "store_true"
     )
     args = parser.parse_args()
     oinb_estimation(args.trio, args.file_name, args)
