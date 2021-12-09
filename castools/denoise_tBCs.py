@@ -13,7 +13,6 @@ def calculate_hamming(rBC1, good_list):
         else:
             return 0
 
-
 def hammingDist(str1, str2):
     '''
     Calculating hamming distance of two strings
@@ -32,6 +31,7 @@ def filter_based_on_umi(quint_df, filter_BC_list, min_count = 2):
     Input：quint_df, a five-column table of cellBC, prom_id, pBC, rBC, umi, counts, and clusters the cell come from.
     Output: the unique quint that are supported by more than 1 read. 
     '''
+    print("minimum read count is > ", min_count, file = sys.stderr)
     cell_list = list(set(quint_df['cellBC'].values))
     pop_list = []
     for cells in cell_list:
@@ -58,6 +58,7 @@ def main():
     parser.add_argument('--bulkbcs', help='path to a tsv file that contains the tripBC that can be measured in bulk', required=True)
     parser.add_argument('--rep', help='output rep name', required=True)
     parser.add_argument('--exp', help = 'name of the experiment', required = True)
+    parser.add_argument('--minreadcount', help = 'min read-count for quad', required = True, default = 2, type = int)
     # Grab input arguments
     args= parser.parse_args()
     # Read in the Quad that contains the [cellBC, umi, tripBC, count], note even this is a tsv file
@@ -68,8 +69,9 @@ def main():
     # Process the bulk BCs to make it into a list
     bulk_bcs = bulk_bcs_exp['tBC'].to_list()
     # Denoise the cell based data
-    pop_df = filter_based_on_umi(prom_quint, bulk_bcs,100)
+    pop_df = filter_based_on_umi(prom_quint, bulk_bcs, args.minreadcount)
     # Save it to a tsv file
     pop_df.to_csv(args.exp + args.rep + '.tsv', sep = '\t', index = False)
+
 if __name__ == '__main__':
     main()
