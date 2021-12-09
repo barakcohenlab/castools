@@ -30,6 +30,7 @@ def ec_cellBC(cellBC, cr_cellBC_list):
     pop_list = []
     for cr_cellBC in cr_cellBC_list:
         hamming = hammingDist(cellBC, cr_cellBC)
+        print("Hamming cutoff is 3", file = sys.stderr)
         if hamming <= 3:
             pop_list.append([cr_cellBC, hamming])
     if len(pop_list) == 1:
