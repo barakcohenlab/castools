@@ -239,7 +239,7 @@ def main():
 
 if __name__ == "__main__":
     logger = logging.getLogger('oinb_log')
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
 
     # create console handler and set level to debug
     ch = logging.StreamHandler()
