@@ -5,6 +5,7 @@ import pickle
 import argparse
 
 
+
 def calculate_hamming(rBC1, good_list):
     for rBC in good_list:
         hamming = hammingDist(rBC1, rBC)
@@ -50,9 +51,12 @@ def filter_based_on_umi(quint_df, filter_BC_list, min_count = 2):
                 possible_rBC = calculate_hamming(row['tBC'], high_count_tBC)
                 if possible_rBC != 0:
                     pop_list.append([row['cellBC'], row['umi'], possible_rBC , row['count']])
+                    #add this denoised tripBC to the high count set since it looks good
+                    high_count_tBC.add(row['cellBC'])
     return pd.DataFrame(pop_list, columns = ['cellBC', 'umi' , 'tBC', 'count'])
 
 def main():
+    print("Minimum hamming cutoff for tripBC is 2", file = sys.stderr)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--quad', help='tsv file contains the quad information', required=True)
     parser.add_argument('--bulkbcs', help='path to a tsv file that contains the tripBC that can be measured in bulk', required=True)
