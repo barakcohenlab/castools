@@ -14,7 +14,7 @@ def parse_arguments():
 
 def read_translate_table():
     translate_table = {}
-    with gzip.open("../dat/3M-february-2018-translatetable.txt.gz", "rt") as translate_table_f:
+    with gzip.open("/scratch/bclab/aramu/CAS/castools/dat/3M-february-2018-translatetable.txt.gz", "rt") as translate_table_f:
         for line in translate_table_f:
             fields = line.split()
             translate_table[fields[1]] = fields[0]

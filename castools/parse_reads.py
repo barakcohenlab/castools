@@ -44,14 +44,14 @@ def min_hamming(v3_whitelist, bc1):
 def read_whitelist():
     #Read in the 10X v3 whitelist
     v3_whitelist = {}
-    with gzip.open("../dat/10xv3_whitelist.txt.gz", "rt") as whitelist_fh:
+    with gzip.open("/scratch/bclab/aramu/CAS/castools/dat/10xv3_whitelist.txt.gz", "rt") as whitelist_fh:
         for bc in whitelist_fh:
             v3_whitelist[bc.rstrip("\n")] = 1
     return v3_whitelist
 
 def translate_10x_whitelist():
     translate_table = {}
-    with open("../dat/3M-february-2018-translatetable.txt") as translate_table_f:
+    with open("/scratch/bclab/aramu/CAS/castools/dat/3M-february-2018-translatetable.txt") as translate_table_f:
         for line in translate_table_f:
             fields = line.split()
             translate_table[fields[1]] = fields[0]
@@ -93,7 +93,7 @@ def parse_fastq(args, v3_whitelist):
                     if end_of_bfp in line2 or m1: #Try to get tripBC using Read2, look for end of BFP in read2
                         #print("m1", m1[0].start, m1, end_of_bfp, line2, file = s)
                         beg_pos = m1[0].start
-                        print(str(len(line2) - beg_pos) + " pA" + " " + line1[(beg_pos) + 16 :beg_pos + 32] + " " + line2[beg_pos + 32: beg_pos + 38], file = sys.stderr)
+                        #print(str(len(line2) - beg_pos) + " pA" + " " + line1[(beg_pos) + 16 :beg_pos + 32] + " " + line2[beg_pos + 32: beg_pos + 38], file = sys.stderr)
                         # Get umi and cell bc from read 1
                         if len(line2) - beg_pos >= 38 and line2[beg_pos + 32: beg_pos + 38] == after_trip_top:
                             cell_bc = line1[0:16]
@@ -111,7 +111,7 @@ def parse_fastq(args, v3_whitelist):
                             #    polya_notvalid_n += 1
                     elif before_trip in line1 or m2: #Try to get tripBC using just read1, look for capture sequence
                         beg_pos = m2[0].start
-                        print(str(len(line1) - beg_pos) + "\tCS" + " " + line1[(beg_pos) + 16 :beg_pos + 32] +  " " + line1[beg_pos + 32: beg_pos + 38], file = sys.stderr)
+                        #print(str(len(line1) - beg_pos) + "\tCS" + " " + line1[(beg_pos) + 16 :beg_pos + 32] +  " " + line1[beg_pos + 32: beg_pos + 38], file = sys.stderr)
                         if len(line1) - beg_pos >= 38 and line1[beg_pos + 32: beg_pos + 38] == after_trip_bottom:
                             cell_bc = line1[0:16]
                             umi = line1[16:28]
