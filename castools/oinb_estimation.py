@@ -230,7 +230,7 @@ def main():
     parser.add_argument(
         '--normalize',
         help="Normalize counts by UMIs per TRIP, for each cell",
-        default = False,
+        default = True,
         action = "store_true"
     )
     args = parser.parse_args()
