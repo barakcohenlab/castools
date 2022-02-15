@@ -29,7 +29,7 @@ def read_sc(sc_f):
             if header:
                 header = False
                 next
-            cell, umi, trip = line.split("\t")
+            cell, umi, trip, _ = line.split(",")
             if cell not in cell_umis:
                 cell_umis[cell] = set()
                 cell_trips[cell] = set()
