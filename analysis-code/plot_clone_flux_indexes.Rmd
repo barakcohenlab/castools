@@ -1,0 +1,65 @@
+---
+title: "Untitled"
+output: html_document
+date: "2022-08-10"
+---
+
+```{r message=F}
+library(tidyverse)
+```
+
+```{r}
+flux_indexes = read_tsv('../scTRIP/intrinsic_extrinsic_std_analysis/all_clones_fluctuation_indexes.tsv', show_col_types = FALSE)
+```
+
+```{r}
+set.seed(499)
+flux_index_selected =
+    flux_indexes %>% 
+    count(clone) %>% 
+    filter(n > 200) %>% 
+    slice_sample(n = 10) %>% 
+    separate(clone, sep = 'clone', into = c('blank', 'number'), remove = FALSE) %>%
+    mutate(number = as.numeric(number)) %>%
+    arrange(number) %>% 
+    select(clone)
+```
+
+```{r}
+colours = c('darkgray', 'brown4')
+
+flux_indexes %>% 
+    inner_join(flux_index_selected) %>%
+    mutate(clone = factor(clone, levels = flux_index_selected$clone),
+           experiment = factor(experiment, levels = c('shuffled', 'measured'))) %>% 
+    ggplot(aes(flux_index, fill = experiment, colour = experiment)) +
+    geom_histogram(position = "identity", alpha = 0.5) +
+    plot_theme_facet() +
+    facet_wrap(~ clone, nrow = 2) +
+    scale_fill_manual(values = colours) +
+    scale_colour_manual(values = colours)
+
+ggsave('figures/clone_flux_indexes.pdf', width = 10, height = 6)
+```
+
+```{r}
+extrinsic_expectation =
+    flux_indexes %>% 
+    filter(clone == 'clone6' & experiment == 'measured') %>% 
+    mutate(flux_index = 0, experiment = 'all_extrinsic')
+```
+
+```{r}
+colours = c('tan4', 'darkgray')
+
+flux_indexes %>% 
+    filter(clone == 'clone3' & experiment == 'shuffled') %>% 
+    bind_rows(extrinsic_expectation) %>% 
+    ggplot(aes(flux_index, fill = experiment, colour = experiment)) +
+    geom_histogram(alpha = 0.5) +
+    plot_theme() +
+    scale_fill_manual(values = colours) +
+    scale_colour_manual(values = colours)
+
+ggsave('figures/intrinsic vs extrinsic expectations.pdf')
+```

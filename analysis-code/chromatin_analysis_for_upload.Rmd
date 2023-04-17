@@ -1,0 +1,484 @@
+---
+title: "chromatin_analysis_for_upload"
+output: html_document
+date: "2023-04-05"
+---
+
+```{r message=F}
+library(rtracklayer)
+library(ggstatsplot)
+library(circlize)
+library(EnrichedHeatmap)
+library(ggpubr)
+library(MetBrewer)
+library(GenomicRanges)
+library(tidyverse)
+```
+
+```{r}
+# windowsFonts('Helvetica' = 'TT Helvetica')
+
+plot_theme <- function () { 
+    theme_bw(base_size = 12, base_family = 'Helvetica') +
+        theme(panel.grid.major = element_blank(), 
+              panel.grid.minor = element_blank(), 
+              plot.title = element_text(hjust = 0.5), 
+              text = element_text(size=24, colour = 'black'),
+              panel.border = element_blank(), 
+              axis.line = element_line(colour = "black"),
+              axis.ticks.x = element_line(colour = 'black'),
+              axis.ticks.y = element_line(colour = 'black'),
+              axis.text.x = element_text(colour = 'black'),
+              axis.text.y = element_text(colour = 'black'))
+}
+
+plot_theme_facet <- function () { 
+    theme_bw(base_size = 12, base_family = 'Helvetica') + 
+        theme(panel.grid.major = element_blank(), 
+              panel.grid.minor = element_blank(), 
+              plot.title = element_text(hjust = 0.5),
+              text = element_text(size = 24, colour = 'black'),
+              strip.background = element_blank(),
+              panel.border = element_rect(colour="black"), 
+              axis.ticks.x = element_line(colour = 'black'),
+              axis.ticks.y = element_line(colour = 'black'),
+              axis.text.x = element_text(colour = 'black'),
+              axis.text.y = element_text(colour = 'black'))
+}
+```
+
+```{r}
+# change path to file depending on folder structure
+all_pre_calculated = read_tsv('all_withMIN_071222.tsv', show_col_types = FALSE) %>%
+    select(-X)
+```
+
+```{r}
+# change path to file depending on folder structure
+LP1_pool1_locations = read_tsv('../scTRIP/CAS LP1 scTRIP/CAS LP1 bulk locations.tsv', show_col_types = FALSE)
+```
+
+```{r}
+LP1_pool1 =
+    all_pre_calculated %>%
+    filter(pool == 'LP1_0221') %>%
+    inner_join(LP1_pool1_locations, by = 'tBC') %>%
+    select(-contains('.'), -counts) 
+```
+
+```{r}
+LP1_pool1_2 = 
+    all_pre_calculated %>%
+    filter(pool == 'LP1_0621') %>%
+    inner_join(LP1_pool1_locations, by = 'tBC') %>%
+    select(-contains('.'), -counts) 
+```
+
+```{r}
+# change path to file depending on folder structure
+LP3_pool_locations = read_tsv('../scTRIP/CAS LP3 scTRIP/Bulk/TRIP_LP3_mapped_locations_090722.tsv', 
+                              show_col_types = FALSE)
+```
+
+```{r}
+LP3_pool =
+    all_pre_calculated %>%
+    filter(pool == 'LP3') %>%
+    distinct() %>%
+    inner_join(LP3_pool_locations, by = 'tBC') %>%
+    select(-contains('.'), -counts) 
+```
+
+```{r message=F}
+# change path to file depending on folder structure
+LP1_locations = read.csv('../scTRIP/CAS LP1 scTRIP pool 2/bulk_expression/spikein 090321/mapped_locations_chromHMM_120321.tsv', sep = '\t')
+```
+
+```{r}
+LP1_latest_pool = 
+    all_pre_calculated %>%
+    filter(pool == 'LP1_latest') %>%
+    inner_join(LP1_locations, by = 'tBC') %>%
+    select(-contains('.'), -counts) 
+```
+
+```{r}
+inner_join(LP1_pool1, LP1_pool1_2, by = c('tBC', 'chr', 'location', 'annotation', 'strand')) %>%
+    ggplot(aes(mean_z.x, mean_z.y)) +
+    geom_point() +
+    plot_theme()
+```
+
+```{r}
+LP1_pool1_unique = anti_join(LP1_pool1, LP1_pool1_2, by = 'tBC')
+LP1_pools = bind_rows(LP1_pool1_2, LP1_pool1_unique) 
+```
+
+```{r}
+all_pools = bind_rows(LP1_latest_pool, LP1_pools, LP3_pool) %>%
+    mutate(id = paste(tBC, pool, sep = '_')) 
+```
+
+```{r}
+all_pools_gr = all_pools %>% 
+    mutate(start = location, end = location) %>%
+    select(-location) %>% 
+    makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+```
+
+```{r}
+all_pools %>% 
+    select(id, tBC, chr, location, strand, annotation, mean, var, mean_z, var_z, twopower_MIN, pool) %>% 
+    write_tsv('Supplementary Table 1.txt')
+```
+
+Plot reproducibility plots
+
+```{r}
+all_pools %>%
+    mutate(pool = case_when(
+        pool == 'LP1_0221' ~ 'Pool 2',
+        pool == 'LP1_0621' ~ 'Pool 3',
+        pool == 'LP1_latest' ~ 'Pool 4',
+        pool == 'LP3' ~ 'Pool 1'
+    )) %>%
+    ggplot(aes(log10(mean), log10(cv2))) +
+    geom_point(aes(colour = pool)) +
+    plot_theme() +
+    scale_colour_manual(values = met.brewer('Hokusai1')[c(1, 3, 6, 7)]) +
+    xlab('mean (log10)') +
+    ylab('CV2 (log10)') +
+    stat_cor(method = "pearson")
+
+ggsave('figures/all_pools_mean_cv2_correlation.pdf', width = 7, height = 6)
+```
+
+Plot integration locations
+
+```{r message=F}
+library(gtrellis)
+```
+
+```{r}
+all_integrations = all_pools %>%
+    mutate(start = location, stop = location) %>% 
+    select(chr, start, stop) %>%
+    mutate(start = as.numeric(start), stop = as.numeric(stop)) 
+```
+
+```{r}
+# png('coreonly_figures/cluster locations trellis.png', res = 300, width = 6, height = 6, unit = 'in')
+pdf('figures/integration locations trellis.pdf', width = 6, height = 6)
+
+gtrellis_layout(n_track = 1,
+                ncol = 1, 
+                track_axis = FALSE,
+                xpadding = c(0.1, 0),
+                gap = unit(0.5, 'mm'),
+                border = FALSE,
+                asist_ticks = FALSE,
+                add_ideogram_track = TRUE,
+                ideogram_track_height = unit(1, 'mm')
+)
+
+add_track(all_integrations,
+          panel_fun = function(gr) {
+        grid.rect(gr[[2]], unit(0.2, "npc"), unit(0.2, 'mm'), unit(0.5, "npc"), 
+        hjust = 0, vjust = 0, default.units = "native",
+        gp = gpar(fill = 'black', col = NA))
+        })
+
+
+add_track(track = 2, clip = FALSE, panel_fun = function(gr) {
+    chr = get_cell_meta_data("name")
+    if(chr == "chrY") {
+        grid.lines(get_cell_meta_data("xlim"), unit(c(0, 0), "npc"),
+            default.units = "native")
+    }
+    grid.text(chr, x = 0, y = 0, just = c("left", "bottom"))
+})
+
+dev.off()
+```
+
+Plot chromatin correlations
+
+```{r}
+all_pools_fitted_rank = all_pools %>%
+        mutate(mean_rank = as.character(ntile(mean_z, 2)),
+           var_rank = as.character(ntile(var, 2)),
+           MIN_rank = as.character(ntile(twopower_MIN, 2)),
+           cv2_rank = as.character(ntile(cv2_z, 2)),
+           fano_rank = as.character(ntile(fano, 2))) %>% 
+    mutate(mean_rank = case_when(
+        mean_rank == '1' ~ 'low mean',
+        mean_rank == '2' ~ 'high mean'
+    ), MIN_rank = case_when(
+        MIN_rank == '1' ~ 'low MIN',
+        MIN_rank == '2' ~ 'high MIN'
+    ))
+
+all_pools_fitted_rank_gr = all_pools_fitted_rank %>%
+    mutate(start = location, end = location) %>%
+    select(-location) %>%
+    makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+```
+
+```{r}
+set.seed(498)
+random_assign = sample(1:2, size = 939, replace = TRUE)
+```
+
+```{r}
+all_pools_fitted_rank_random = all_pools_fitted_rank %>% 
+    mutate(random_rank = random_assign) %>% 
+    mutate(random_rank = as.character(random_rank))
+
+all_pools_fitted_rank_random_gr = all_pools_fitted_rank_random %>%
+    mutate(start = location, end = location) %>%
+    select(-location) %>%
+    makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+```
+
+Plot histone mods
+
+```{r}
+# change path to files depending on folder structure
+histone_mods = fs::dir_ls(path = 'Histone_modifications/', glob = '*_no_dup.bed.gz') %>%
+  as.character() %>%
+  purrr::set_names(function(x) {
+    str_sub(fs::path_file(x), end = - str_length('_hg38_narrowpeaks_no_dup.bed.gz') - 1)
+  })
+```
+
+```{r}
+narrowpeak_cols = c(signal_value = "numeric", 
+                    p_value = "numeric",
+                    q_value = "numeric", 
+                    peak = "integer")
+
+import_narrowpeak_file = function(file_path){
+    import(file_path, format = 'BED', extraCols = narrowpeak_cols)
+}
+```
+
+```{r}
+histone_mods_gr = histone_mods %>%
+    map(~ import_narrowpeak_file(.x))
+```
+
+```{r}
+norm_to_mat = function(feature, gr){
+    
+    normalizeToMatrix(feature, 
+                        gr, 
+                        value_column = "score", 
+                        extend = 5000, 
+                        mean_mode = "w0", 
+                        smooth = TRUE,
+                        background = 0,
+                        w = 50
+    )
+}
+```
+
+```{r}
+histone_mods_rank_normmat = histone_mods_gr %>%
+    map(~ norm_to_mat(.x, all_pools_fitted_rank_gr))
+```
+
+```{r}
+plot_enriched_hm_comparison = function(current_mat, title, colour){
+  
+    col_fun = colorRamp2(quantile(current_mat, c(0, 0.99)), c("white", colour))
+    
+    EnrichedHeatmap(current_mat, 
+                    column_title = title, 
+                    col = col_fun,
+                    name = title, 
+                    top_annotation = HeatmapAnnotation(
+                        lines = anno_enriched(
+                          gp = gpar(
+                            col = c('#348AA7', '#7A4419')
+                            # ,lty = 1:2
+                            ),
+                            height = unit(2, 'in'),
+                            axis_param = list(
+                                side = 'left'
+                            ))),
+                    use_raster = TRUE)
+}
+```
+
+```{r}
+selected_histones = c('H3K27ac', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K79me2', 'H3K9ac',)
+
+lgd = Legend(at = c("low mean", "high mean"), title = "", 
+    type = "lines", legend_gp = gpar(col = c('#348AA7', '#ECC30B')))
+
+# , lty = 1:2
+ht_list = NULL
+
+    for (i in 1:length(histone_mods_rank_normmat)){
+        current_name = names(histone_mods_rank_normmat)[i]
+        if (current_name %in% selected_histones){
+            ht_list = ht_list + 
+            plot_enriched_hm_comparison(histone_mods_rank_normmat[[i]], current_name, 'blue')
+        }
+    }
+
+ht_list =
+    draw(ht_list, split = all_pools_fitted_rank_random$mean_rank, ht_gap = unit(0.7, "cm"), annotation_legend_list = list(lgd))
+```
+
+
+```{r}
+add_anno_enriched = function(ht_list, name, ri, ci) {
+    pushViewport(viewport(layout.pos.row = ri, layout.pos.col = ci))
+    extract_anno_enriched(ht_list, name, newpage = FALSE)
+    upViewport()
+}
+
+pdf('figures/all_pools_histones_with_mean_high_low.pdf', width = 14, height = 3)
+
+pushViewport(viewport(layout = grid.layout(nr = 1, nc = 6)))
+for (i in seq_along(selected_histones)){
+    add_anno_enriched(ht_list, selected_histones[i], 1, i)
+}
+upViewport()
+dev.off()
+```
+
+Permutate labels 
+
+```{r}
+calculate_average_histones = function(mod, df){
+    
+    as_tibble(histone_mods_rank_normmat[[mod]]) %>% 
+        mutate(average = rowMeans(., na.rm = TRUE)) %>% 
+        select(average) %>% 
+        bind_cols(df) %>% 
+        mutate(histone = mod, average = average + 1) 
+}
+```
+
+```{r}
+set.seed(4309)
+random_seeds = sample(1:5000, size = 1000)
+```
+
+```{r}
+calculate_mean_random_samples = function(current_seed){
+    
+    set.seed(current_seed)
+    random_grouping = rep(1:2, each = 470)
+    random_grouping_truncated = sample(random_grouping[1:939])
+    
+    df = all_pools_fitted_rank %>% 
+        mutate(random_rank = random_grouping_truncated) %>% 
+        mutate(random_rank = case_when(
+            random_rank == 1 ~ 'group1', 
+            random_rank == 2 ~ 'group2'
+        ))
+    
+    c('H3K27ac', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K79me2', 'H3K9ac') %>%
+        map(~ calculate_average_histones(.x, df)) %>%
+        reduce(bind_rows) %>%
+        group_by(random_rank, histone) %>%
+        summarise(mean_histones = mean(average), .groups = 'drop') %>%
+        pivot_wider(id_cols = histone, names_from = random_rank, values_from = mean_histones) %>% 
+        mutate(diff = abs(group2-group1)) %>% 
+        mutate(id = current_seed)
+}
+```
+
+```{r}
+all_random = random_seeds %>% 
+    map(~ calculate_mean_random_samples(.x)) %>% 
+    reduce(bind_rows) 
+```
+
+```{r}
+mean_diffs = c('H3K27ac', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K79me2', 'H3K9ac') %>%
+    map(~ calculate_average_histones(.x,  all_pools_fitted_rank)) %>% 
+    reduce(bind_rows) %>% 
+    group_by(mean_rank, histone) %>% 
+    summarise(mean_histones = mean(average)) %>% 
+    pivot_wider(id_cols = histone, names_from = mean_rank, values_from = mean_histones) %>% 
+    mutate(diff = abs(`low mean` - `high mean`)) 
+
+MIN_diffs = c('H3K27ac', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K79me2', 'H3K9ac') %>%
+    map(~ calculate_average_histones(.x,  all_pools_fitted_rank)) %>% 
+    reduce(bind_rows) %>% 
+    group_by(MIN_rank, histone) %>% 
+    summarise(mean_histones = mean(average)) %>% 
+    pivot_wider(id_cols = histone, names_from = MIN_rank, values_from = mean_histones) %>% 
+    mutate(diff = abs(`low MIN` - `high MIN`)) 
+```
+
+```{r}
+calculate_label_perm_p = function(current_mod, mean_MIN){
+    
+    if (mean_MIN == 'mean'){
+        actual = filter(mean_diffs, histone == current_mod)$diff
+    } else if (mean_MIN == 'MIN'){
+        actual = filter(MIN_diffs, histone == current_mod)$diff
+    }
+    
+    n_greater = all_random %>% 
+        filter(histone == current_mod & diff > actual) %>% 
+        nrow()
+    
+    return(n_greater/length(random_seeds))
+}
+```
+
+```{r}
+selected_histones = c('H3K27ac', 'H3K4me1', 'H3K4me2', 'H3K4me3', 'H3K79me2', 'H3K9ac') 
+
+selected_histones %>% 
+    map(~ calculate_label_perm_p(.x, 'mean')) %>% 
+    set_names(selected_histones)
+```
+
+Sequences for motif analyses
+
+```{r}
+get_sequences = function(df, filename){
+    gr = df %>%
+        # rownames_to_column('id') %>%
+        mutate(start = location - 500, end = location + 500) %>%
+        separate(chr, into = c('crap', 'chr'), sep = 'chr') %>%
+        makeGRangesFromDataFrame(keep.extra.columns = TRUE)
+    
+    sequences = getSeq(BSgenome.Hsapiens.NCBI.GRCh38, gr)
+    names(sequences) = mcols(gr)$id
+    
+    sequences
+}
+```
+
+```{r}
+all_MIN_split_sequences = all_pools_fitted_rank %>%
+    split(.$MIN_rank) %>%
+    map(~ get_sequences(.x))
+```
+
+```{r}
+writeXStringSet(all_MIN_split_sequences$`low MIN`, 'Sequence_comparisons/gkmSVM/all_low_MIN_seqs.fa')
+writeXStringSet(all_MIN_split_sequences$`high MIN`, 'Sequence_comparisons/gkmSVM/all_high_MIN_seqs.fa')
+```
+
+Random set for motif analyses
+
+```{r}
+# choose a random set for motif comparisons and get sequences like above with this df 
+set.seed(random_seeds[1])
+all_pools_fitted_rank_random_motif = all_pools_fitted_rank %>% 
+    mutate(random_rank = sample(rep(1:2, each = 470))[1:939]) %>% 
+    mutate(random_rank = case_when(
+            random_rank == 1 ~ 'group1', 
+            random_rank == 2 ~ 'group2'
+        ))
+```
+
