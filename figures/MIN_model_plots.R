@@ -1,0 +1,117 @@
+## Based on run_logistic_MIN_062922.R in clarice-model-v2 folder
+
+set.seed(10)
+source("../analysis-code/classifier/coefplot.R")
+library(caret)
+
+all_with_extrinsic <- read.table("../analysis-code/classifier/all_with_ext_features.tsv", sep = "\t", head = T)
+all_without_extrinsic <- read.table("../analysis-code/classifier/all_features.tsv", sep = "\t", head = T)
+
+print(nrow(all_with_extrinsic))
+print(nrow(all_without_extrinsic))
+
+holdout <- read.table("../analysis-code/classifier/LP3_intrinsic_holdout.tsv", head = T, sep = "\t")
+holdout <- holdout[holdout$top_bottom_twopowerMIN != 3, ]
+print(table(holdout$top_bottom_twopowerMIN))
+
+print(table(all_with_extrinsic$top_bottom_twopowerMIN))
+print(table(all_without_extrinsic$top_bottom_twopowerMIN))
+
+all_with_extrinsic <- all_with_extrinsic[all_with_extrinsic$top_bottom_twopowerMIN != 3, ]
+all_without_extrinsic <- all_without_extrinsic[all_without_extrinsic$top_bottom_twopowerMIN != 3, ]
+
+print(table(all_with_extrinsic$top_bottom_twopowerMIN))
+print(table(all_without_extrinsic$top_bottom_twopowerMIN))
+
+
+# Models
+
+## Intrinsic only 
+# Intrinsic only in the paper
+# To assess the power of genomic features to predict the MIN of IR locations we trained a logistic regression model using chromatin modifications and DNA sequence features to classify high and low MIN locations and achieved an accuracy of 76%. When applied to data from a different pool, the trained model achieved 67% accuracy. 
+
+m02 <- glm(top_bottom_twopowerMIN ~ 1 + H2AZ+ H3K27ac+ H3K27me3+ H3K36me3+ H3K4me1+ H3K4me2+ H3K4me3+ H3K79me2+ H3K9ac+ H3K9me3+ H4K20me1+ REST_HUMAN.H11MO.0.A+ RARG_HUMAN.H11MO.0.B+ ZNF41_HUMAN.H11MO.0.C+ NR1D1_HUMAN.H11MO.0.B+ NFIC_HUMAN.H11MO.0.A+ CLOCK_HUMAN.H11MO.0.C+ NFIA_HUMAN.H11MO.0.C+ ZBTB6_HUMAN.H11MO.0.C+ ELF2_HUMAN.H11MO.0.C+ SMAD4_HUMAN.H11MO.0.B+ GABPA_HUMAN.H11MO.0.A+ ELK4_HUMAN.H11MO.0.A+ ALX1_HUMAN.H11MO.0.B+ ETV1_HUMAN.H11MO.0.A+ ATF1_HUMAN.H11MO.0.B+ CREM_HUMAN.H11MO.0.C+ MAX_HUMAN.H11MO.0.A+ TFAP4_HUMAN.H11MO.0.A+ EPAS1_HUMAN.H11MO.0.B+ ARNT_HUMAN.H11MO.0.B+ FOXO4_HUMAN.H11MO.0.C+ HIF1A_HUMAN.H11MO.0.C+ GC_content+ atac_count+ in_gene+ n_enhancers, family = "binomial", data = all_without_extrinsic)
+print("m02")
+print(summary(m02))
+sum(round(m02$fitted.values) == all_without_extrinsic$top_bottom_twopowerMIN)/nrow(all_without_extrinsic)
+
+#Intrinsic model on holdout
+holdout_predictions <- predict(m02, holdout, type = "response")
+sum(round(holdout_predictions) == holdout$top_bottom_twopowerMIN)/nrow(holdout)
+#plot_coeffs_S(m02, "MIN_coeffs_intrinsic_features.pdf", title = "MIN: intrinsic")
+
+## Cross validation on Intrinsic only model
+
+#Cross validation on Intrinsic only model
+
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
+
+all_without_extrinsic$noise[all_without_extrinsic$top_bottom_twopowerMIN==1] <- "High MIN"
+all_without_extrinsic$noise[all_without_extrinsic$top_bottom_twopowerMIN==0] <- "Low MIN"
+all_without_extrinsic$noise <- factor(all_without_extrinsic$noise, levels = c("Low MIN", "High MIN"))
+
+#fit a regression model and use LOOCV to evaluate performance
+all_without_extrinsic_model <- train(noise ~ 1 + H2AZ+ H3K27ac+ H3K27me3+ H3K36me3+ H3K4me1+ H3K4me2+ H3K4me3+ H3K79me2+ H3K9ac+ H3K9me3+ H4K20me1+ REST_HUMAN.H11MO.0.A+ RARG_HUMAN.H11MO.0.B+ ZNF41_HUMAN.H11MO.0.C+ NR1D1_HUMAN.H11MO.0.B+ NFIC_HUMAN.H11MO.0.A+ CLOCK_HUMAN.H11MO.0.C+ NFIA_HUMAN.H11MO.0.C+ ZBTB6_HUMAN.H11MO.0.C+ ELF2_HUMAN.H11MO.0.C+ SMAD4_HUMAN.H11MO.0.B+ GABPA_HUMAN.H11MO.0.A+ ELK4_HUMAN.H11MO.0.A+ ALX1_HUMAN.H11MO.0.B+ ETV1_HUMAN.H11MO.0.A+ ATF1_HUMAN.H11MO.0.B+ CREM_HUMAN.H11MO.0.C+ MAX_HUMAN.H11MO.0.A+ TFAP4_HUMAN.H11MO.0.A+ EPAS1_HUMAN.H11MO.0.B+ ARNT_HUMAN.H11MO.0.B+ FOXO4_HUMAN.H11MO.0.C+ HIF1A_HUMAN.H11MO.0.C+ GC_content+ atac_count+ in_gene+ n_enhancers, data = all_without_extrinsic, method = "glm", trControl = ctrl)
+
+#view summary of LOOCV               
+print(all_without_extrinsic_model)
+print(summary(all_without_extrinsic_model))
+
+## Extrinsic only model
+
+# Extrinsic only used  in paper
+# Using only the global features, the model achieved 75% accuracy (albeit without a holdout set to test on due to the small numbers of locations with associated extrinsic features). 
+
+m1 <- glm(top_bottom_twopowerMIN ~ 1 + s_prop+ g2_prop+ cd24_prop, family = "binomial", data = all_with_extrinsic)
+print(summary(m1))
+sum(round(m1$fitted.values) == all_with_extrinsic$top_bottom_twopowerMIN)/nrow(all_with_extrinsic)
+plot_coeffs_S(m1, "fig5F.pdf", title = "MIN: extrinsic")
+
+## Cross validation on Extrinsic only model
+
+#Cross validation on Extrinsic only model
+
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
+
+#Label High noise and Low noise
+all_with_extrinsic$noise[all_with_extrinsic$top_bottom_twopowerMIN==1] <- "High MIN"
+all_with_extrinsic$noise[all_with_extrinsic$top_bottom_twopowerMIN==0] <- "Low MIN"
+all_with_extrinsic$noise <- factor(all_with_extrinsic$noise, levels = c("Low MIN", "High MIN"))
+
+
+#fit a regression model and use LOOCV to evaluate performance
+all_just_extrinsic_model <- train(noise ~ 1 + s_prop+ g2_prop+ cd24_prop, data = all_with_extrinsic, method = "glm", trControl = ctrl)
+
+#view summary of LOOCV               
+print(all_just_extrinsic_model)
+print(summary(all_just_extrinsic_model))
+
+## Intrinsic + extrinsic model
+
+# Intrinsic + Extrinsic
+# When we combined the significant intrinsic features from the previous model with these extrinsic features, the model accuracy increased to 84% 
+m2 <- glm(top_bottom_twopowerMIN ~ 1 + s_prop + g2_prop + cd24_prop + H3K4me3 + RARG_HUMAN.H11MO.0.B + FOXO4_HUMAN.H11MO.0.C + HIF1A_HUMAN.H11MO.0.C + TFAP4_HUMAN.H11MO.0.A + CREM_HUMAN.H11MO.0.C + ATF1_HUMAN.H11MO.0.B + NFIC_HUMAN.H11MO.0.A + CLOCK_HUMAN.H11MO.0.C + NFIA_HUMAN.H11MO.0.C + in_gene, family = "binomial", data = all_with_extrinsic)
+print(summary(m2))
+sum(round(m2$fitted.values) == all_with_extrinsic$top_bottom_twopowerMIN)/nrow(all_with_extrinsic)
+plot_coeffs_S(m2, "fig5H.pdf", title = "MIN: extrinsic + intrinsic")
+
+## Cross validation on Intrinsic + Extrinsic model
+
+#Cross validation on Intrinsic + Extrinsic model
+
+#specify the cross-validation method
+ctrl <- trainControl(method = "LOOCV")
+
+#fit a regression model and use LOOCV to evaluate performance
+all_intrinsic_and_extrinsic_model <- train(noise ~ 1 + s_prop + g2_prop + cd24_prop + H3K4me3 + RARG_HUMAN.H11MO.0.B + FOXO4_HUMAN.H11MO.0.C + HIF1A_HUMAN.H11MO.0.C + TFAP4_HUMAN.H11MO.0.A + CREM_HUMAN.H11MO.0.C + ATF1_HUMAN.H11MO.0.B + NFIC_HUMAN.H11MO.0.A + CLOCK_HUMAN.H11MO.0.C + NFIA_HUMAN.H11MO.0.C + in_gene, data = all_with_extrinsic, method = "glm", trControl = ctrl)
+
+#view summary of LOOCV               
+print(all_intrinsic_and_extrinsic_model)
+print(summary(all_intrinsic_and_extrinsic_model))
+
+min_accuracies <- read.table("dat/MIN_accuracies.txt", head = T)
+ggplot(data=min_accuracies, aes(x=Category, y=Accuracy)) + geom_bar(stat="identity") + ylim(0, 1) + xlab("") + ggtitle("MIN")
+ggsave("fig5G.pdf")
+
