@@ -81,7 +81,7 @@ all_pools_gr = all_pools %>%
     makeGRangesFromDataFrame(keep.extra.columns = TRUE)
 all_pools %>%
     select(id, tBC, chr, location, strand, annotation, mean, var, mean_z, var_z, twopower_MIN, pool) %>%
-    write_tsv('Supplementary Table 1.txt')
+    write_tsv('dat/Supplementary Table 1.txt')
 head(all_pools)
 pdf("fig2_2.pdf")
 all_pools %>%
