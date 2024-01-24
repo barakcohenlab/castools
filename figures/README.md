@@ -28,5 +28,5 @@ For classifier model details see the notebooks in `analysis-code/classifier/`
 
 ## Supplementary Figure 3F, 5E, 5F
 
-`Rscript MIN_model_plots.R`
+`Rscript mean_model_plots.R`
 
