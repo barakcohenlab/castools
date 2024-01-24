@@ -1,0 +1,4 @@
+Accuracy Category
+0.76 Intrinsic
+#0.75 Extrinsic
+0.84 Intrinsic+Extrinsic

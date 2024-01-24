@@ -19,3 +19,14 @@ This was made with illustrator - a schematic of the SARGENT workflow
 
 `Rscript fig3_1.R`
 
+# Classifier model plots
+For classifier model details see the notebooks in `analysis-code/classifier/`
+
+## Figure 5F, 5G, 5H
+
+`Rscript MIN_model_plots.R`
+
+## Supplementary Figure 3F, 5E, 5F
+
+`Rscript MIN_model_plots.R`
+
