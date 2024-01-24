@@ -4,12 +4,18 @@ The packages are from CRAN and Bioconductor and are easily installable with a re
 version of R.
 
 ## Figure 1
-This was made with illustrator - a schematic of SARGENT
 
-## Figure 2
+This was made with illustrator - a schematic of the SARGENT workflow
+
+## Figure 2 A,B
+
 `Rscript fig2_1.R`
+
+## Figure 2 C,D and Supplementary Figure 2C, 2D
+
 `Rscript fig2_2.R`
 
-## Figure 3
+## Figure 3A, B and Supplementary Figures 3A, 3B, 3C
+
 `Rscript fig3_1.R`
 

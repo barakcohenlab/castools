@@ -114,3 +114,34 @@ all_pools %>%
     stat_cor(method = "pearson")
 dev.off()
 
+pdf("SuppFigure_2C_2D.pdf")
+all_pools %>%
+    mutate(pool = case_when(
+        pool == 'LP1_0221' ~ 'Pool 2',
+        pool == 'LP1_0621' ~ 'Pool 3',
+        pool == 'LP1_latest' ~ 'Pool 4',
+        pool == 'LP3' ~ 'Pool 1'
+    )) %>%
+    ggplot(aes(log10(mean), log10(var/mean))) +
+    geom_point(aes(colour = pool)) +
+    plot_theme() +
+    scale_colour_manual(values = met.brewer('Hokusai1')[c(1, 3, 6, 7)]) +
+    xlab('mean (log10)') +
+    ylab('fano factor (log10)') +
+    stat_cor(method = "pearson")
+all_pools %>%
+    mutate(pool = case_when(
+        pool == 'LP1_0221' ~ 'Pool 2',
+        pool == 'LP1_0621' ~ 'Pool 3',
+        pool == 'LP1_latest' ~ 'Pool 4',
+        pool == 'LP3' ~ 'Pool 1'
+    )) %>%
+    ggplot(aes(log10(mean), log10(var/mean^2))) +
+    geom_point(aes(colour = pool)) +
+    plot_theme() +
+    scale_colour_manual(values = met.brewer('Hokusai1')[c(1, 3, 6, 7)]) +
+    xlab('mean (log10)') +
+    ylab('CV2 (log10)') +
+    stat_cor(method = "pearson")
+dev.off()
+
