@@ -18,9 +18,6 @@ included in the classifier/ subfolder.
 ## castools
 This folder contains a command-line tool for processing the raw data from a SARGENT experiment.
 
-## tests
-This folder contains data used for testing the code
-
 # Citation
 The experimental methods and analysis results are described in this preprint:
 https://www.biorxiv.org/content/10.1101/2022.08.31.506082v1
