@@ -1,6 +1,8 @@
 # castools
 Command line tools and analysis code for the SARGENT project.
 
+![SARGENT](./figures/SARGENT.png)
+
 # Authors
 Clarice, Avi and Siqi from the Barak Cohen Lab
 
