@@ -26,6 +26,10 @@ For classifier model details see the notebooks in `analysis-code/classifier/`
 
 `Rscript MIN_model_plots.R`
 
+## Figure 6B,C
+
+Please refer ../analysis-code/clonal_inference_fig6BC.ipynb notebook
+
 ## Supplementary Figure 3F, 5E, 5F
 
 `Rscript mean_model_plots.R`
