@@ -1,2 +1,6 @@
-If you use this tool, please cite the following preprint:
-https://www.biorxiv.org/content/10.1101/2022.08.31.506082v1
+cff-version: 1.1.0
+message: "If you use this software, please cite it as below."
+biorxiv: https://www.biorxiv.org/content/10.1101/2022.08.31.506082v1
+title: Effect of genomic and cellular environments on gene expression noise
+version: v1.0.1
+date-released: 2024-02-04
